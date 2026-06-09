@@ -1,0 +1,2913 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>八字排盘与易经起卦</title>
+  <style>
+    :root {
+      --color-page: #f7faf6;
+      --color-surface: #ffffff;
+      --color-surface-soft: #f1f6f0;
+      --color-surface-tint: #fbf8ef;
+      --color-ink: #26332f;
+      --color-muted: #66786f;
+      --color-line: #dce7df;
+      --color-line-strong: #c7d8cf;
+      --color-accent: #2f7d67;
+      --color-accent-strong: #236e5a;
+      --color-accent-soft: #dceee8;
+      --color-focus: rgba(47, 125, 103, 0.18);
+      --color-warn-soft: #fff3dc;
+      --shadow-soft: 0 10px 28px rgba(42, 64, 54, 0.1);
+      --radius-card: 8px;
+      --radius-control: 8px;
+      --content-width: 1180px;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--color-ink);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(255, 248, 220, 0.58), transparent 30%),
+        linear-gradient(180deg, rgba(231, 242, 234, 0.88), rgba(247, 250, 246, 0.98)),
+        var(--color-page);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button,
+    select,
+    input {
+      transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease, color 150ms ease;
+    }
+
+    .app {
+      width: min(100% - 40px, var(--content-width));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    .app-header {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+
+    .app-title {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .app-subtitle {
+      max-width: 760px;
+      margin: 0;
+      color: var(--color-muted);
+      font-size: 14px;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 5px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--color-line);
+      border-radius: var(--radius-control);
+      box-shadow: 0 8px 22px rgba(42, 64, 54, 0.08);
+    }
+
+    .tab-button {
+      position: relative;
+      min-width: 0;
+      min-height: 40px;
+      padding: 0 16px;
+      color: var(--color-muted);
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 700;
+    }
+
+    .tab-button:hover {
+      color: var(--color-ink);
+      background: var(--color-surface-soft);
+    }
+
+    .tab-button:focus-visible {
+      color: var(--color-ink);
+      background: var(--color-surface-soft);
+      outline: none;
+      box-shadow: 0 0 0 3px var(--color-focus);
+    }
+
+    .tab-button[aria-selected="true"] {
+      color: #ffffff;
+      background: var(--color-accent);
+      box-shadow: 0 7px 18px rgba(47, 125, 103, 0.24);
+    }
+
+    .tab-button[aria-selected="true"]::after {
+      position: absolute;
+      right: 14px;
+      bottom: 7px;
+      left: 14px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.78);
+      border-radius: 999px;
+      content: "";
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.is-active {
+      display: block;
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: minmax(300px, 0.78fr) minmax(520px, 1.22fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .bazi-sidebar {
+      display: grid;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .bazi-main {
+      min-width: 0;
+    }
+
+    .card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-line);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 16px 18px 12px;
+      background: linear-gradient(180deg, rgba(251, 252, 250, 0.92), rgba(255, 255, 255, 0.92));
+      border-bottom: 1px solid var(--color-line);
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.3;
+    }
+
+    .card-note {
+      margin: 6px 0 0;
+      color: var(--color-muted);
+      font-size: 13px;
+    }
+
+    .card-body {
+      padding: 16px 18px 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .field label {
+      color: var(--color-muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 38px;
+      padding: 0 11px;
+      color: var(--color-ink);
+      background: #fbfcfa;
+      border: 1px solid var(--color-line);
+      border-radius: var(--radius-control);
+      min-width: 0;
+      text-overflow: ellipsis;
+    }
+
+    .field input:hover,
+    .field select:hover {
+      border-color: var(--color-line-strong);
+      background: #ffffff;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--color-accent);
+      outline: 0;
+      box-shadow: 0 0 0 3px var(--color-focus);
+    }
+
+    .status-line {
+      margin: 14px 0 0;
+      padding: 11px 12px;
+      color: #5f4c22;
+      background: var(--color-warn-soft);
+      border: 1px solid #f1dca8;
+      border-radius: var(--radius-card);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .status-line.is-error {
+      color: #7a2724;
+      background: #fff0ee;
+      border-color: #f2bab4;
+    }
+
+    .status-line.is-ready {
+      color: #245d4e;
+      background: var(--color-accent-soft);
+      border-color: #b8d8ce;
+    }
+
+    .pillar-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .pillar {
+      min-width: 0;
+      padding: 12px 10px;
+      text-align: center;
+      background: #fbfcfa;
+      border: 1px solid var(--color-line);
+      border-radius: var(--radius-card);
+    }
+
+    .pillar.is-day {
+      border-color: var(--color-accent);
+      background: linear-gradient(180deg, #ffffff, #f0f8f4);
+      box-shadow: inset 0 0 0 2px var(--color-accent-soft), 0 8px 18px rgba(47, 125, 103, 0.11);
+    }
+
+    .pillar-label {
+      color: var(--color-muted);
+      font-size: 13px;
+    }
+
+    .pillar-rows {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .pillar-row {
+      min-width: 0;
+    }
+
+    .pillar-row-label {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--color-muted);
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .pillar-value {
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .pillar-star,
+    .pillar-hidden {
+      color: var(--color-ink);
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .pillar-hidden {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 3px 5px;
+      min-height: 19px;
+    }
+
+    .hidden-stem {
+      white-space: nowrap;
+    }
+
+    .element-char {
+      display: inline-block;
+      color: var(--element-color, var(--color-ink));
+    }
+
+    .element-char + .element-char {
+      margin-left: 2px;
+    }
+
+    .element-char.is-metal {
+      text-shadow:
+        0 1px 0 rgba(38, 49, 45, 0.58),
+        0 0 1px rgba(38, 49, 45, 0.82);
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .meta-item {
+      min-width: 0;
+      padding: 11px 12px;
+      background: var(--color-surface-soft);
+      border: 1px solid rgba(199, 216, 207, 0.72);
+      border-radius: var(--radius-card);
+    }
+
+    .meta-label {
+      display: block;
+      color: var(--color-muted);
+      font-size: 12px;
+    }
+
+    .meta-value {
+      display: block;
+      margin-top: 4px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+      line-height: 1.42;
+    }
+
+    .element-summary {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 16px;
+      padding: 13px 14px;
+      background: #fbfcfa;
+      border: 1px solid var(--color-line);
+      border-radius: var(--radius-card);
+    }
+
+    .element-summary-item {
+      display: inline-flex;
+      align-items: baseline;
+      color: var(--element-color, var(--color-ink));
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .element-summary-count {
+      margin-left: 1px;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .relationship-diagram {
+      width: min(100%, 420px);
+      margin: 0 auto;
+      display: block;
+    }
+
+    .relation-node circle {
+      filter: drop-shadow(0 7px 10px rgba(38, 51, 47, 0.12));
+    }
+
+    .relation-node text {
+      fill: #ffffff;
+      font-size: 31px;
+      font-weight: 800;
+      dominant-baseline: middle;
+      text-anchor: middle;
+    }
+
+    .relation-node.is-metal text {
+      fill: #26332f;
+    }
+
+    .relation-arrow {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .relation-generate {
+      stroke-width: 6.5;
+    }
+
+    .relation-control {
+      stroke: #26332f;
+      stroke-width: 4.8;
+    }
+
+    .relationship-legend {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+      color: var(--color-muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .relationship-legend strong {
+      color: var(--color-ink);
+    }
+
+    .relation-center {
+      fill: #ffffff;
+      stroke: var(--color-line-strong);
+      stroke-width: 2;
+    }
+
+    .relation-center-text {
+      fill: var(--color-ink);
+      font-size: 20px;
+      font-weight: 800;
+      dominant-baseline: middle;
+      text-anchor: middle;
+    }
+
+    .mode-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .mode-pill {
+      min-height: 34px;
+      padding: 0 13px;
+      color: var(--color-muted);
+      background: #fbfcfa;
+      border: 1px solid var(--color-line);
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .mode-pill:hover {
+      color: var(--color-ink);
+      border-color: var(--color-line-strong);
+      background: #ffffff;
+    }
+
+    .mode-pill:focus-visible {
+      outline: 0;
+      box-shadow: 0 0 0 3px var(--color-focus);
+    }
+
+    .mode-pill.is-active {
+      color: #ffffff;
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+    }
+
+    .input-section {
+      display: none;
+    }
+
+    .input-section.is-active {
+      display: block;
+    }
+
+    .line-select-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .hexagram-layout {
+      display: grid;
+      grid-template-columns: minmax(118px, 150px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .hexagram-lines {
+      display: grid;
+      gap: 7px;
+      padding: 13px;
+      background: var(--color-surface-tint);
+      border: 1px solid var(--color-line);
+      border-radius: var(--radius-card);
+    }
+
+    .hexagram-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 26px;
+      color: var(--color-ink);
+      font-size: 25px;
+      line-height: 1;
+    }
+
+    .hexagram-name {
+      margin: 0 0 7px;
+      font-size: 23px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .hexagram-copy {
+      margin: 0;
+      color: var(--color-muted);
+      overflow-wrap: anywhere;
+    }
+
+    .plain-translation {
+      margin: 7px 0 0;
+      padding: 8px 10px;
+      color: var(--color-ink);
+      background: var(--color-surface-soft);
+      border: 1px solid rgba(199, 216, 207, 0.7);
+      border-radius: var(--radius-card);
+      font-size: 13px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .plain-translation strong {
+      color: var(--color-accent-strong);
+    }
+
+    .hexagram-status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      max-width: 100%;
+      padding: 0 10px;
+      margin-bottom: 10px;
+      color: #5f4c22;
+      background: var(--color-warn-soft);
+      border: 1px solid #f1dca8;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .line-text-list {
+      display: grid;
+      gap: 8px;
+      padding: 0;
+      margin: 16px 0 0;
+      list-style: none;
+    }
+
+    .line-text-list li {
+      padding: 9px 10px;
+      background: var(--color-surface-soft);
+      border: 1px solid rgba(199, 216, 207, 0.7);
+      border-radius: var(--radius-card);
+      color: var(--color-muted);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .line-text-list .line-original {
+      color: var(--color-muted);
+    }
+
+    .line-text-list .plain-translation {
+      margin-top: 7px;
+      background: #ffffff;
+      border-color: rgba(199, 216, 207, 0.9);
+      color: var(--color-ink);
+    }
+
+    .change-row {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .change-row label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 38px;
+      padding: 0 8px;
+      background: #fbfcfa;
+      border: 1px solid var(--color-line);
+      border-radius: var(--radius-card);
+      color: var(--color-muted);
+      font-size: 13px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease, color 150ms ease;
+    }
+
+    .change-row label:hover {
+      color: var(--color-ink);
+      background: #ffffff;
+      border-color: var(--color-line-strong);
+    }
+
+    .change-row label:has(input:checked) {
+      color: var(--color-accent-strong);
+      background: var(--color-accent-soft);
+      border-color: #b8d8ce;
+      font-weight: 700;
+    }
+
+    .change-row input:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+
+    .changed-hexagram {
+      display: none;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--color-line);
+    }
+
+    .changed-hexagram.is-visible {
+      display: block;
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        width: min(100% - 28px, var(--content-width));
+      }
+
+      .panel-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-grid > .card:first-child {
+        box-shadow: 0 8px 22px rgba(42, 64, 54, 0.08);
+      }
+
+      .line-select-grid,
+      .change-row {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        padding-top: 22px;
+      }
+
+      .app-title {
+        font-size: 25px;
+      }
+
+      .form-grid,
+      .meta-grid,
+      .hexagram-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .pillar-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .tabs {
+        grid-template-columns: 1fr;
+      }
+
+      .line-select-grid,
+      .change-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1 class="app-title">八字排盘与易经起卦</h1>
+      <p class="app-subtitle">实时查看四柱、五行颜色、卦象与变卦，适合桌面和平板直接使用。</p>
+    </header>
+
+    <nav class="tabs" aria-label="功能切换">
+      <button class="tab-button" type="button" id="tab-bazi" role="tab" aria-controls="panel-bazi" aria-selected="true" data-tab="bazi">
+        八字排盘
+      </button>
+      <button class="tab-button" type="button" id="tab-iching" role="tab" aria-controls="panel-iching" aria-selected="false" data-tab="iching">
+        易经起卦
+      </button>
+    </nav>
+
+    <section class="panel is-active" id="panel-bazi" role="tabpanel" aria-labelledby="tab-bazi" data-panel="bazi">
+      <div class="panel-grid bazi-layout">
+        <div class="bazi-sidebar">
+          <article class="card">
+            <div class="card-header">
+              <h2 class="card-title">出生信息</h2>
+              <p class="card-note">按填写的公历日期和出生时间实时计算四柱。</p>
+            </div>
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="birth-date">公历日期</label>
+                  <input id="birth-date" type="date" value="1990-05-16">
+                </div>
+                <div class="field">
+                  <label for="birth-time">出生时间</label>
+                  <input id="birth-time" type="time" value="09:30">
+                </div>
+                <div class="field">
+                  <label for="gender">性别</label>
+                  <select id="gender">
+                    <option value="male">男</option>
+                    <option value="female">女</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="birth-place">出生地</label>
+                  <select id="birth-place">
+                  </select>
+                </div>
+              </div>
+              <p class="status-line" id="bazi-status">正在加载 lunar-typescript...</p>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <h2 class="card-title">五行相生相克</h2>
+              <p class="card-note">外圈为相生，内线为相克。</p>
+            </div>
+            <div class="card-body">
+              <svg class="relationship-diagram" viewBox="0 0 520 460" role="img" aria-labelledby="five-element-title five-element-desc">
+                <title id="five-element-title">五行相生相克关系图</title>
+                <desc id="five-element-desc">金生水，水生木，木生火，火生土，土生金；金克木，木克土，土克水，水克火，火克金。</desc>
+                <defs>
+                  <marker id="arrow-gold" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+                    <path d="M1 1 L11 6 L1 11 Z" fill="#FFD700"></path>
+                  </marker>
+                  <marker id="arrow-blue" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+                    <path d="M1 1 L11 6 L1 11 Z" fill="#2196F3"></path>
+                  </marker>
+                  <marker id="arrow-green" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+                    <path d="M1 1 L11 6 L1 11 Z" fill="#4CAF50"></path>
+                  </marker>
+                  <marker id="arrow-red" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+                    <path d="M1 1 L11 6 L1 11 Z" fill="#F44336"></path>
+                  </marker>
+                  <marker id="arrow-earth" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+                    <path d="M1 1 L11 6 L1 11 Z" fill="#A55A13"></path>
+                  </marker>
+                  <marker id="arrow-control" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M1 1 L11 6 L1 11 Z" fill="#26332f"></path>
+                  </marker>
+                </defs>
+
+                <path class="relation-arrow relation-generate" d="M315 78 C350 87 374 106 392 132" stroke="#FFD700" marker-end="url(#arrow-gold)"></path>
+                <path class="relation-arrow relation-generate" d="M416 232 C406 270 395 294 388 306" stroke="#2196F3" marker-end="url(#arrow-blue)"></path>
+                <path class="relation-arrow relation-generate" d="M315 389 C278 398 246 396 219 385" stroke="#4CAF50" marker-end="url(#arrow-green)"></path>
+                <path class="relation-arrow relation-generate" d="M129 328 C111 292 108 257 112 230" stroke="#F44336" marker-end="url(#arrow-red)"></path>
+                <path class="relation-arrow relation-generate" d="M145 139 C165 112 184 98 202 89" stroke="#A55A13" marker-end="url(#arrow-earth)"></path>
+
+                <path class="relation-arrow relation-control" d="M276 105 L342 303" marker-end="url(#arrow-control)"></path>
+                <path class="relation-arrow relation-control" d="M315 336 L151 219" marker-end="url(#arrow-control)"></path>
+                <path class="relation-arrow relation-control" d="M148 172 L366 172" marker-end="url(#arrow-control)"></path>
+                <path class="relation-arrow relation-control" d="M382 203 L204 318" marker-end="url(#arrow-control)"></path>
+                <path class="relation-arrow relation-control" d="M185 313 L240 111" marker-end="url(#arrow-control)"></path>
+
+                <circle class="relation-center" cx="260" cy="220" r="37"></circle>
+                <text class="relation-center-text" x="260" y="211">相生</text>
+                <text class="relation-center-text" x="260" y="235">相克</text>
+
+                <g class="relation-node is-metal">
+                  <circle cx="260" cy="55" r="42" fill="#FFD700"></circle>
+                  <text x="260" y="55">金</text>
+                </g>
+                <g class="relation-node">
+                  <circle cx="432" cy="172" r="42" fill="#2196F3"></circle>
+                  <text x="432" y="172">水</text>
+                </g>
+                <g class="relation-node">
+                  <circle cx="362" cy="365" r="42" fill="#4CAF50"></circle>
+                  <text x="362" y="365">木</text>
+                </g>
+                <g class="relation-node">
+                  <circle cx="158" cy="365" r="42" fill="#F44336"></circle>
+                  <text x="158" y="365">火</text>
+                </g>
+                <g class="relation-node">
+                  <circle cx="88" cy="172" r="42" fill="#A55A13"></circle>
+                  <text x="88" y="172">土</text>
+                </g>
+              </svg>
+              <div class="relationship-legend">
+                <div><strong>相生：</strong>金生水，水生木，木生火，火生土，土生金。</div>
+                <div><strong>相克：</strong>金克木，木克土，土克水，水克火，火克金。</div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="bazi-main">
+        <article class="card">
+          <div class="card-header">
+            <h2 class="card-title">四柱预览</h2>
+            <p class="card-note">结果来自 lunar-typescript，日柱保留高亮。</p>
+          </div>
+          <div class="card-body">
+            <div class="pillar-grid" id="bazi-pillars" aria-label="八字四柱">
+            </div>
+
+            <div class="meta-grid">
+              <div class="meta-item">
+                <span class="meta-label">节气</span>
+                <span class="meta-value" id="bazi-solar-term">-</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">日柱纳音</span>
+                <span class="meta-value" id="bazi-day-nayin">-</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">喜神</span>
+                <span class="meta-value" id="bazi-favorable-god">-</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">用神</span>
+                <span class="meta-value" id="bazi-useful-god">-</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">忌神</span>
+                <span class="meta-value" id="bazi-unfavorable-god">-</span>
+              </div>
+            </div>
+
+            <div class="element-summary" id="bazi-element-summary" aria-label="八字五行数量统计">
+            </div>
+          </div>
+        </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-iching" role="tabpanel" aria-labelledby="tab-iching" data-panel="iching">
+      <div class="panel-grid">
+        <article class="card">
+          <div class="card-header">
+            <h2 class="card-title">起卦输入</h2>
+            <p class="card-note">可用上下卦或六爻输入起卦，六爻顺序固定为从下爻到上爻。</p>
+          </div>
+          <div class="card-body">
+            <div class="mode-row" aria-label="起卦方式">
+              <button class="mode-pill is-active" type="button" data-iching-mode="trigrams">上下卦</button>
+              <button class="mode-pill" type="button" data-iching-mode="lines">六爻输入</button>
+            </div>
+
+            <div class="input-section is-active" data-input-section="trigrams">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="upper-trigram">上卦</label>
+                  <select id="upper-trigram">
+                    <option value="qian">乾 ☰ 天</option>
+                    <option value="dui">兑 ☱ 泽</option>
+                    <option value="li">离 ☲ 火</option>
+                    <option value="zhen">震 ☳ 雷</option>
+                    <option value="xun">巽 ☴ 风</option>
+                    <option value="kan" selected>坎 ☵ 水</option>
+                    <option value="gen">艮 ☶ 山</option>
+                    <option value="kun">坤 ☷ 地</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="lower-trigram">下卦</label>
+                  <select id="lower-trigram">
+                    <option value="qian">乾 ☰ 天</option>
+                    <option value="dui">兑 ☱ 泽</option>
+                    <option value="li">离 ☲ 火</option>
+                    <option value="zhen">震 ☳ 雷</option>
+                    <option value="xun">巽 ☴ 风</option>
+                    <option value="kan">坎 ☵ 水</option>
+                    <option value="gen">艮 ☶ 山</option>
+                    <option value="kun" selected>坤 ☷ 地</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-section" data-input-section="lines">
+              <div class="line-select-grid" aria-label="六爻输入，顺序从下到上">
+                <div class="field">
+                  <label for="line-1">初爻</label>
+                  <select id="line-1" data-line-index="0"><option value="0" selected>⚋ 阴</option><option value="1">⚊ 阳</option></select>
+                </div>
+                <div class="field">
+                  <label for="line-2">二爻</label>
+                  <select id="line-2" data-line-index="1"><option value="0">⚋ 阴</option><option value="1" selected>⚊ 阳</option></select>
+                </div>
+                <div class="field">
+                  <label for="line-3">三爻</label>
+                  <select id="line-3" data-line-index="2"><option value="0" selected>⚋ 阴</option><option value="1">⚊ 阳</option></select>
+                </div>
+                <div class="field">
+                  <label for="line-4">四爻</label>
+                  <select id="line-4" data-line-index="3"><option value="0" selected>⚋ 阴</option><option value="1">⚊ 阳</option></select>
+                </div>
+                <div class="field">
+                  <label for="line-5">五爻</label>
+                  <select id="line-5" data-line-index="4"><option value="0" selected>⚋ 阴</option><option value="1">⚊ 阳</option></select>
+                </div>
+                <div class="field">
+                  <label for="line-6">上爻</label>
+                  <select id="line-6" data-line-index="5"><option value="0" selected>⚋ 阴</option><option value="1">⚊ 阳</option></select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <h2 class="card-title">卦象预览</h2>
+            <p class="card-note">本卦按当前输入实时更新，卦象展示顺序为上爻到下爻。</p>
+          </div>
+          <div class="card-body">
+            <div class="hexagram-layout">
+              <div class="hexagram-lines" id="original-lines" aria-label="本卦，从上到下展示的六爻">
+              </div>
+              <div>
+                <h3 class="hexagram-name" id="original-name"></h3>
+                <p class="hexagram-copy" id="original-judgment"></p>
+                <p class="plain-translation" id="original-judgment-translation"></p>
+                <ul class="line-text-list" id="original-line-texts">
+                </ul>
+              </div>
+            </div>
+
+            <div class="change-row" aria-label="变爻复选框，顺序从下到上">
+              <label><input type="checkbox" data-changing-index="0"> 初爻</label>
+              <label><input type="checkbox" data-changing-index="1"> 二爻</label>
+              <label><input type="checkbox" data-changing-index="2"> 三爻</label>
+              <label><input type="checkbox" data-changing-index="3"> 四爻</label>
+              <label><input type="checkbox" data-changing-index="4"> 五爻</label>
+              <label><input type="checkbox" data-changing-index="5"> 上爻</label>
+            </div>
+
+            <div class="changed-hexagram" id="changed-hexagram">
+              <div class="hexagram-layout">
+                <div class="hexagram-lines" id="changed-lines" aria-label="变卦，从上到下展示的六爻">
+                </div>
+                <div>
+                  <div class="hexagram-status" id="changed-status"></div>
+                  <h3 class="hexagram-name" id="changed-name"></h3>
+                  <p class="hexagram-copy" id="changed-judgment"></p>
+                  <p class="plain-translation" id="changed-judgment-translation"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    window.lunarTypescriptStatus = {
+      requiredCdnUrl: 'https://unpkg.com/lunar-typescript@1.6.11/dist/lunar.js',
+      moduleCdnUrl: 'https://unpkg.com/lunar-typescript@1.6.11/dist/index.mjs',
+      requiredCdnLoaded: false,
+      requiredCdnFailed: false,
+      moduleLoaded: false,
+      moduleError: null
+    };
+  </script>
+  <script
+    src="https://unpkg.com/lunar-typescript@1.6.11/dist/lunar.js"
+    async
+    onload="window.lunarTypescriptStatus.requiredCdnLoaded = true"
+    onerror="window.lunarTypescriptStatus.requiredCdnFailed = true">
+  </script>
+  <script>
+    window.lunarTypescriptReady = import('https://unpkg.com/lunar-typescript@1.6.11/dist/index.mjs')
+      .then((module) => {
+        window.lunarTypescriptModule = module;
+        window.Solar = window.Solar || module.Solar;
+        window.Lunar = window.Lunar || module.Lunar;
+        window.lunarTypescriptStatus.moduleLoaded = true;
+        return module;
+      })
+      .catch((error) => {
+        window.lunarTypescriptStatus.moduleError = error;
+        return null;
+      });
+  </script>
+  <script>
+    // Core constants and embedded offline hexagram data.
+    const TAB_KEYS = {
+      bazi: 'bazi',
+      iching: 'iching'
+    };
+
+    const FIVE_ELEMENT_COLORS = {
+      wood: '#4CAF50',
+      fire: '#F44336',
+      earth: '#FF9800',
+      metal: '#FFD700',
+      water: '#2196F3'
+    };
+
+    const STEM_BRANCH_ELEMENT_MAP = {
+      '甲': 'wood',
+      '乙': 'wood',
+      '寅': 'wood',
+      '卯': 'wood',
+      '丙': 'fire',
+      '丁': 'fire',
+      '巳': 'fire',
+      '午': 'fire',
+      '戊': 'earth',
+      '己': 'earth',
+      '辰': 'earth',
+      '戌': 'earth',
+      '丑': 'earth',
+      '未': 'earth',
+      '庚': 'metal',
+      '辛': 'metal',
+      '申': 'metal',
+      '酉': 'metal',
+      '壬': 'water',
+      '癸': 'water',
+      '亥': 'water',
+      '子': 'water'
+    };
+
+    const ELEMENT_LABELS = {
+      wood: '木',
+      fire: '火',
+      earth: '土',
+      metal: '金',
+      water: '水'
+    };
+
+    const ELEMENT_SUMMARY_ORDER = ['metal', 'wood', 'water', 'fire', 'earth'];
+
+    const STEM_META = {
+      '甲': { element: 'wood', polarity: 'yang' },
+      '乙': { element: 'wood', polarity: 'yin' },
+      '丙': { element: 'fire', polarity: 'yang' },
+      '丁': { element: 'fire', polarity: 'yin' },
+      '戊': { element: 'earth', polarity: 'yang' },
+      '己': { element: 'earth', polarity: 'yin' },
+      '庚': { element: 'metal', polarity: 'yang' },
+      '辛': { element: 'metal', polarity: 'yin' },
+      '壬': { element: 'water', polarity: 'yang' },
+      '癸': { element: 'water', polarity: 'yin' }
+    };
+
+    const BRANCH_HIDDEN_STEMS = {
+      '子': ['癸'],
+      '丑': ['己', '癸', '辛'],
+      '寅': ['甲', '丙', '戊'],
+      '卯': ['乙'],
+      '辰': ['戊', '乙', '癸'],
+      '巳': ['丙', '戊', '庚'],
+      '午': ['丁', '己'],
+      '未': ['己', '丁', '乙'],
+      '申': ['庚', '壬', '戊'],
+      '酉': ['辛'],
+      '戌': ['戊', '辛', '丁'],
+      '亥': ['壬', '甲']
+    };
+
+    const ELEMENT_GENERATES = {
+      wood: 'fire',
+      fire: 'earth',
+      earth: 'metal',
+      metal: 'water',
+      water: 'wood'
+    };
+
+    const ELEMENT_CONTROLS = {
+      wood: 'earth',
+      fire: 'metal',
+      earth: 'water',
+      metal: 'wood',
+      water: 'fire'
+    };
+
+    const TEN_GOD_NAMES = {
+      friend: '比肩',
+      robWealth: '劫财',
+      eatingGod: '食神',
+      hurtingOfficer: '伤官',
+      indirectWealth: '偏财',
+      directWealth: '正财',
+      sevenKillings: '七杀',
+      directOfficer: '正官',
+      indirectResource: '偏印',
+      directResource: '正印'
+    };
+
+    const DOMESTIC_LOCATION_GROUPS = [
+      { province: '北京市', cities: ['北京市'] },
+      { province: '天津市', cities: ['天津市'] },
+      { province: '河北省', cities: ['石家庄市', '唐山市', '秦皇岛市', '邯郸市', '邢台市', '保定市', '张家口市', '承德市', '沧州市', '廊坊市', '衡水市'] },
+      { province: '山西省', cities: ['太原市', '大同市', '阳泉市', '长治市', '晋城市', '朔州市', '晋中市', '运城市', '忻州市', '临汾市', '吕梁市'] },
+      { province: '内蒙古自治区', cities: ['呼和浩特市', '包头市', '乌海市', '赤峰市', '通辽市', '鄂尔多斯市', '呼伦贝尔市', '巴彦淖尔市', '乌兰察布市', '兴安盟', '锡林郭勒盟', '阿拉善盟'] },
+      { province: '辽宁省', cities: ['沈阳市', '大连市', '鞍山市', '抚顺市', '本溪市', '丹东市', '锦州市', '营口市', '阜新市', '辽阳市', '盘锦市', '铁岭市', '朝阳市', '葫芦岛市'] },
+      { province: '吉林省', cities: ['长春市', '吉林市', '四平市', '辽源市', '通化市', '白山市', '松原市', '白城市', '延边朝鲜族自治州'] },
+      { province: '黑龙江省', cities: ['哈尔滨市', '齐齐哈尔市', '鸡西市', '鹤岗市', '双鸭山市', '大庆市', '伊春市', '佳木斯市', '七台河市', '牡丹江市', '黑河市', '绥化市', '大兴安岭地区'] },
+      { province: '上海市', cities: ['上海市'] },
+      { province: '江苏省', cities: ['南京市', '无锡市', '徐州市', '常州市', '苏州市', '南通市', '连云港市', '淮安市', '盐城市', '扬州市', '镇江市', '泰州市', '宿迁市'] },
+      { province: '浙江省', cities: ['杭州市', '宁波市', '温州市', '嘉兴市', '湖州市', '绍兴市', '金华市', '衢州市', '舟山市', '台州市', '丽水市'] },
+      { province: '安徽省', cities: ['合肥市', '芜湖市', '蚌埠市', '淮南市', '马鞍山市', '淮北市', '铜陵市', '安庆市', '黄山市', '滁州市', '阜阳市', '宿州市', '六安市', '亳州市', '池州市', '宣城市'] },
+      { province: '福建省', cities: ['福州市', '厦门市', '莆田市', '三明市', '泉州市', '漳州市', '南平市', '龙岩市', '宁德市'] },
+      { province: '江西省', cities: ['南昌市', '景德镇市', '萍乡市', '九江市', '新余市', '鹰潭市', '赣州市', '吉安市', '宜春市', '抚州市', '上饶市'] },
+      { province: '山东省', cities: ['济南市', '青岛市', '淄博市', '枣庄市', '东营市', '烟台市', '潍坊市', '济宁市', '泰安市', '威海市', '日照市', '临沂市', '德州市', '聊城市', '滨州市', '菏泽市'] },
+      { province: '河南省', cities: ['郑州市', '开封市', '洛阳市', '平顶山市', '安阳市', '鹤壁市', '新乡市', '焦作市', '濮阳市', '许昌市', '漯河市', '三门峡市', '南阳市', '商丘市', '信阳市', '周口市', '驻马店市', '济源市'] },
+      { province: '湖北省', cities: ['武汉市', '黄石市', '十堰市', '宜昌市', '襄阳市', '鄂州市', '荆门市', '孝感市', '荆州市', '黄冈市', '咸宁市', '随州市', '恩施土家族苗族自治州', '仙桃市', '潜江市', '天门市', '神农架林区'] },
+      { province: '湖南省', cities: ['长沙市', '株洲市', '湘潭市', '衡阳市', '邵阳市', '岳阳市', '常德市', '张家界市', '益阳市', '郴州市', '永州市', '怀化市', '娄底市', '湘西土家族苗族自治州'] },
+      { province: '广东省', cities: ['广州市', '韶关市', '深圳市', '珠海市', '汕头市', '佛山市', '江门市', '湛江市', '茂名市', '肇庆市', '惠州市', '梅州市', '汕尾市', '河源市', '阳江市', '清远市', '东莞市', '中山市', '潮州市', '揭阳市', '云浮市'] },
+      { province: '广西壮族自治区', cities: ['南宁市', '柳州市', '桂林市', '梧州市', '北海市', '防城港市', '钦州市', '贵港市', '玉林市', '百色市', '贺州市', '河池市', '来宾市', '崇左市'] },
+      { province: '海南省', cities: ['海口市', '三亚市', '三沙市', '儋州市', '五指山市', '琼海市', '文昌市', '万宁市', '东方市', '定安县', '屯昌县', '澄迈县', '临高县', '白沙黎族自治县', '昌江黎族自治县', '乐东黎族自治县', '陵水黎族自治县', '保亭黎族苗族自治县', '琼中黎族苗族自治县'] },
+      { province: '重庆市', cities: ['重庆市'] },
+      { province: '四川省', cities: ['成都市', '自贡市', '攀枝花市', '泸州市', '德阳市', '绵阳市', '广元市', '遂宁市', '内江市', '乐山市', '南充市', '眉山市', '宜宾市', '广安市', '达州市', '雅安市', '巴中市', '资阳市', '阿坝藏族羌族自治州', '甘孜藏族自治州', '凉山彝族自治州'] },
+      { province: '贵州省', cities: ['贵阳市', '六盘水市', '遵义市', '安顺市', '毕节市', '铜仁市', '黔西南布依族苗族自治州', '黔东南苗族侗族自治州', '黔南布依族苗族自治州'] },
+      { province: '云南省', cities: ['昆明市', '曲靖市', '玉溪市', '保山市', '昭通市', '丽江市', '普洱市', '临沧市', '楚雄彝族自治州', '红河哈尼族彝族自治州', '文山壮族苗族自治州', '西双版纳傣族自治州', '大理白族自治州', '德宏傣族景颇族自治州', '怒江傈僳族自治州', '迪庆藏族自治州'] },
+      { province: '西藏自治区', cities: ['拉萨市', '日喀则市', '昌都市', '林芝市', '山南市', '那曲市', '阿里地区'] },
+      { province: '陕西省', cities: ['西安市', '铜川市', '宝鸡市', '咸阳市', '渭南市', '延安市', '汉中市', '榆林市', '安康市', '商洛市'] },
+      { province: '甘肃省', cities: ['兰州市', '嘉峪关市', '金昌市', '白银市', '天水市', '武威市', '张掖市', '平凉市', '酒泉市', '庆阳市', '定西市', '陇南市', '临夏回族自治州', '甘南藏族自治州'] },
+      { province: '青海省', cities: ['西宁市', '海东市', '海北藏族自治州', '黄南藏族自治州', '海南藏族自治州', '果洛藏族自治州', '玉树藏族自治州', '海西蒙古族藏族自治州'] },
+      { province: '宁夏回族自治区', cities: ['银川市', '石嘴山市', '吴忠市', '固原市', '中卫市'] },
+      { province: '新疆维吾尔自治区', cities: ['乌鲁木齐市', '克拉玛依市', '吐鲁番市', '哈密市', '昌吉回族自治州', '博尔塔拉蒙古自治州', '巴音郭楞蒙古自治州', '阿克苏地区', '克孜勒苏柯尔克孜自治州', '喀什地区', '和田地区', '伊犁哈萨克自治州', '塔城地区', '阿勒泰地区', '石河子市', '阿拉尔市', '图木舒克市', '五家渠市', '北屯市', '铁门关市', '双河市', '可克达拉市', '昆玉市', '胡杨河市', '新星市', '白杨市'] },
+      { province: '香港特别行政区', cities: ['香港特别行政区'] },
+      { province: '澳门特别行政区', cities: ['澳门特别行政区'] },
+      { province: '台湾省', cities: ['台北市', '新北市', '桃园市', '台中市', '台南市', '高雄市', '基隆市', '新竹市', '嘉义市', '新竹县', '苗栗县', '彰化县', '南投县', '云林县', '嘉义县', '屏东县', '宜兰县', '花莲县', '台东县', '澎湖县', '金门县', '连江县'] }
+    ];
+
+    function toLocationKey(province, city) {
+      return `${province}|${city}`;
+    }
+
+    const LOCATION_PRESETS = DOMESTIC_LOCATION_GROUPS.reduce((presets, group) => {
+      group.cities.forEach((city) => {
+        presets[toLocationKey(group.province, city)] = {
+          province: group.province,
+          city,
+          label: `${group.province} ${city}`,
+          timeZone: group.province === '台湾省' ? 'Asia/Taipei' : 'Asia/Shanghai',
+          utcOffsetMinutes: 480,
+          dstPolicy: 'none'
+        };
+      });
+      return presets;
+    }, {});
+
+    const TRIGRAMS = {
+      qian: { name: '乾', symbol: '☰', nature: '天', lines: [1, 1, 1] },
+      dui: { name: '兑', symbol: '☱', nature: '泽', lines: [1, 1, 0] },
+      li: { name: '离', symbol: '☲', nature: '火', lines: [1, 0, 1] },
+      zhen: { name: '震', symbol: '☳', nature: '雷', lines: [1, 0, 0] },
+      xun: { name: '巽', symbol: '☴', nature: '风', lines: [0, 1, 1] },
+      kan: { name: '坎', symbol: '☵', nature: '水', lines: [0, 1, 0] },
+      gen: { name: '艮', symbol: '☶', nature: '山', lines: [0, 0, 1] },
+      kun: { name: '坤', symbol: '☷', nature: '地', lines: [0, 0, 0] }
+    };
+
+    const HEXAGRAMS = {
+      qian_qian: {
+        number: 1,
+        name: '乾',
+        fullName: '乾为天',
+        upper: 'qian',
+        lower: 'qian',
+        judgment: '乾：元，亨，利，贞。',
+        linesText: [
+          '初九：潜龙，勿用。',
+          '九二：见龙在田，利见大人。',
+          '九三：君子终日乾乾，夕惕若厉，无咎。',
+          '九四：或跃在渊，无咎。',
+          '九五：飞龙在天，利见大人。',
+          '上九：亢龙，有悔。'
+        ]
+      },
+      kun_kun: {
+        number: 2,
+        name: '坤',
+        fullName: '坤为地',
+        upper: 'kun',
+        lower: 'kun',
+        judgment: '坤：元，亨，利牝马之贞。',
+        linesText: [
+          '初六：履霜，坚冰至。',
+          '六二：直，方，大，不习无不利。',
+          '六三：含章可贞。或从王事，无成有终。',
+          '六四：括囊，无咎无誉。',
+          '六五：黄裳，元吉。',
+          '上六：龙战于野，其血玄黄。'
+        ]
+      },
+      kan_zhen: {
+        number: 3,
+        name: '屯',
+        fullName: '水雷屯',
+        upper: 'kan',
+        lower: 'zhen',
+        judgment: '屯：元亨，利贞。勿用有攸往，利建侯。',
+        linesText: [
+          '初九：磐桓，利居贞，利建侯。',
+          '六二：屯如邅如，乘马班如。匪寇婚媾，女子贞不字，十年乃字。',
+          '六三：即鹿无虞，惟入于林中，君子几不如舍，往吝。',
+          '六四：乘马班如，求婚媾，往吉，无不利。',
+          '九五：屯其膏，小贞吉，大贞凶。',
+          '上六：乘马班如，泣血涟如。'
+        ]
+      },
+      gen_kan: {
+        number: 4,
+        name: '蒙',
+        fullName: '山水蒙',
+        upper: 'gen',
+        lower: 'kan',
+        judgment: '蒙：亨。匪我求童蒙，童蒙求我。初筮告，再三渎，渎则不告。利贞。',
+        linesText: [
+          '初六：发蒙，利用刑人，用说桎梏，以往吝。',
+          '九二：包蒙吉，纳妇吉，子克家。',
+          '六三：勿用取女，见金夫，不有躬，无攸利。',
+          '六四：困蒙，吝。',
+          '六五：童蒙，吉。',
+          '上九：击蒙，不利为寇，利御寇。'
+        ]
+      },
+      kan_qian: {
+        number: 5,
+        name: '需',
+        fullName: '水天需',
+        upper: 'kan',
+        lower: 'qian',
+        judgment: '需：有孚，光亨，贞吉。利涉大川。',
+        linesText: [
+          '初九：需于郊，利用恒，无咎。',
+          '九二：需于沙，小有言，终吉。',
+          '九三：需于泥，致寇至。',
+          '六四：需于血，出自穴。',
+          '九五：需于酒食，贞吉。',
+          '上六：入于穴，有不速之客三人来，敬之终吉。'
+        ]
+      },
+      qian_kan: {
+        number: 6,
+        name: '讼',
+        fullName: '天水讼',
+        upper: 'qian',
+        lower: 'kan',
+        judgment: '讼：有孚，窒惕，中吉，终凶。利见大人，不利涉大川。',
+        linesText: [
+          '初六：不永所事，小有言，终吉。',
+          '九二：不克讼，归而逋，其邑人三百户，无眚。',
+          '六三：食旧德，贞厉，终吉。或从王事，无成。',
+          '九四：不克讼，复即命，渝安贞，吉。',
+          '九五：讼，元吉。',
+          '上九：或锡之鞶带，终朝三褫之。'
+        ]
+      },
+      kun_kan: {
+        number: 7,
+        name: '师',
+        fullName: '地水师',
+        upper: 'kun',
+        lower: 'kan',
+        judgment: '师：贞，丈人吉，无咎。',
+        linesText: [
+          '初六：师出以律，否臧凶。',
+          '九二：在师中，吉，无咎，王三锡命。',
+          '六三：师或舆尸，凶。',
+          '六四：师左次，无咎。',
+          '六五：田有禽，利执言，无咎。长子帅师，弟子舆尸，贞凶。',
+          '上六：大君有命，开国承家，小人勿用。'
+        ]
+      },
+      kan_kun: {
+        number: 8,
+        name: '比',
+        fullName: '水地比',
+        upper: 'kan',
+        lower: 'kun',
+        judgment: '比：吉。原筮，元永贞，无咎。不宁方来，后夫凶。',
+        linesText: [
+          '初六：有孚比之，无咎。有孚盈缶，终来有它，吉。',
+          '六二：比之自内，贞吉。',
+          '六三：比之匪人。',
+          '六四：外比之，贞吉。',
+          '九五：显比，王用三驱，失前禽。邑人不诫，吉。',
+          '上六：比之无首，凶。'
+        ]
+      },
+      xun_qian: {
+        number: 9,
+        name: '小畜',
+        fullName: '风天小畜',
+        upper: 'xun',
+        lower: 'qian',
+        judgment: '小畜：亨。密云不雨，自我西郊。',
+        linesText: [
+          '初九：复自道，何其咎，吉。',
+          '九二：牵复，吉。',
+          '九三：舆说辐，夫妻反目。',
+          '六四：有孚，血去惕出，无咎。',
+          '九五：有孚挛如，富以其邻。',
+          '上九：既雨既处，尚德载，妇贞厉。月几望，君子征凶。'
+        ]
+      },
+      qian_dui: {
+        number: 10,
+        name: '履',
+        fullName: '天泽履',
+        upper: 'qian',
+        lower: 'dui',
+        judgment: '履：履虎尾，不咥人，亨。',
+        linesText: [
+          '初九：素履，往无咎。',
+          '九二：履道坦坦，幽人贞吉。',
+          '六三：眇能视，跛能履，履虎尾，咥人，凶。武人为于大君。',
+          '九四：履虎尾，愬愬终吉。',
+          '九五：夬履，贞厉。',
+          '上九：视履考祥，其旋元吉。'
+        ]
+      },
+      kun_qian: {
+        number: 11,
+        name: '泰',
+        fullName: '地天泰',
+        upper: 'kun',
+        lower: 'qian',
+        judgment: '泰：小往大来，吉亨。',
+        linesText: [
+          '初九：拔茅茹，以其汇，征吉。',
+          '九二：包荒，用冯河，不遐遗，朋亡，得尚于中行。',
+          '九三：无平不陂，无往不复。艰贞无咎。勿恤其孚，于食有福。',
+          '六四：翩翩不富以其邻，不戒以孚。',
+          '六五：帝乙归妹，以祉元吉。',
+          '上六：城复于隍，勿用师。自邑告命，贞吝。'
+        ]
+      },
+      qian_kun: {
+        number: 12,
+        name: '否',
+        fullName: '天地否',
+        upper: 'qian',
+        lower: 'kun',
+        judgment: '否：否之匪人，不利君子贞，大往小来。',
+        linesText: [
+          '初六：拔茅茹，以其汇，贞吉亨。',
+          '六二：包承，小人吉，大人否亨。',
+          '六三：包羞。',
+          '九四：有命无咎，畴离祉。',
+          '九五：休否，大人吉。其亡其亡，系于苞桑。',
+          '上九：倾否，先否后喜。'
+        ]
+      },
+      qian_li: {
+        number: 13,
+        name: '同人',
+        fullName: '天火同人',
+        upper: 'qian',
+        lower: 'li',
+        judgment: '同人：同人于野，亨。利涉大川，利君子贞。',
+        linesText: [
+          '初九：同人于门，无咎。',
+          '六二：同人于宗，吝。',
+          '九三：伏戎于莽，升其高陵，三岁不兴。',
+          '九四：乘其墉，弗克攻，吉。',
+          '九五：同人，先号咷而后笑。大师克相遇。',
+          '上九：同人于郊，无悔。'
+        ]
+      },
+      li_qian: {
+        number: 14,
+        name: '大有',
+        fullName: '火天大有',
+        upper: 'li',
+        lower: 'qian',
+        judgment: '大有：元亨。',
+        linesText: [
+          '初九：无交害，匪咎。艰则无咎。',
+          '九二：大车以载，有攸往，无咎。',
+          '九三：公用亨于天子，小人弗克。',
+          '九四：匪其彭，无咎。',
+          '六五：厥孚交如，威如，吉。',
+          '上九：自天祐之，吉无不利。'
+        ]
+      },
+      kun_gen: {
+        number: 15,
+        name: '谦',
+        fullName: '地山谦',
+        upper: 'kun',
+        lower: 'gen',
+        judgment: '谦：亨，君子有终。',
+        linesText: [
+          '初六：谦谦君子，用涉大川，吉。',
+          '六二：鸣谦，贞吉。',
+          '九三：劳谦君子，有终吉。',
+          '六四：无不利，撝谦。',
+          '六五：不富以其邻，利用侵伐，无不利。',
+          '上六：鸣谦，利用行师，征邑国。'
+        ]
+      },
+      zhen_kun: {
+        number: 16,
+        name: '豫',
+        fullName: '雷地豫',
+        upper: 'zhen',
+        lower: 'kun',
+        judgment: '豫：利建侯行师。',
+        linesText: [
+          '初六：鸣豫，凶。',
+          '六二：介于石，不终日，贞吉。',
+          '六三：盱豫，悔。迟有悔。',
+          '九四：由豫，大有得。勿疑，朋盍簪。',
+          '六五：贞疾，恒不死。',
+          '上六：冥豫，成有渝，无咎。'
+        ]
+      },
+      dui_zhen: {
+        number: 17,
+        name: '随',
+        fullName: '泽雷随',
+        upper: 'dui',
+        lower: 'zhen',
+        judgment: '随：元亨，利贞，无咎。',
+        linesText: [
+          '初九：官有渝，贞吉。出门交有功。',
+          '六二：系小子，失丈夫。',
+          '六三：系丈夫，失小子。随有求得，利居贞。',
+          '九四：随有获，贞凶。有孚在道，以明，何咎。',
+          '九五：孚于嘉，吉。',
+          '上六：拘系之，乃从维之。王用亨于西山。'
+        ]
+      },
+      gen_xun: {
+        number: 18,
+        name: '蛊',
+        fullName: '山风蛊',
+        upper: 'gen',
+        lower: 'xun',
+        judgment: '蛊：元亨，利涉大川。先甲三日，后甲三日。',
+        linesText: [
+          '初六：干父之蛊，有子，考无咎，厉终吉。',
+          '九二：干母之蛊，不可贞。',
+          '九三：干父之蛊，小有悔，无大咎。',
+          '六四：裕父之蛊，往见吝。',
+          '六五：干父之蛊，用誉。',
+          '上九：不事王侯，高尚其事。'
+        ]
+      },
+      kun_dui: {
+        number: 19,
+        name: '临',
+        fullName: '地泽临',
+        upper: 'kun',
+        lower: 'dui',
+        judgment: '临：元亨，利贞。至于八月有凶。',
+        linesText: [
+          '初九：咸临，贞吉。',
+          '九二：咸临，吉，无不利。',
+          '六三：甘临，无攸利。既忧之，无咎。',
+          '六四：至临，无咎。',
+          '六五：知临，大君之宜，吉。',
+          '上六：敦临，吉，无咎。'
+        ]
+      },
+      xun_kun: {
+        number: 20,
+        name: '观',
+        fullName: '风地观',
+        upper: 'xun',
+        lower: 'kun',
+        judgment: '观：盥而不荐，有孚颙若。',
+        linesText: [
+          '初六：童观，小人无咎，君子吝。',
+          '六二：窥观，利女贞。',
+          '六三：观我生，进退。',
+          '六四：观国之光，利用宾于王。',
+          '九五：观我生，君子无咎。',
+          '上九：观其生，君子无咎。'
+        ]
+      },
+      li_zhen: {
+        number: 21,
+        name: '噬嗑',
+        fullName: '火雷噬嗑',
+        upper: 'li',
+        lower: 'zhen',
+        judgment: '噬嗑：亨。利用狱。',
+        linesText: [
+          '初九：屦校灭趾，无咎。',
+          '六二：噬肤灭鼻，无咎。',
+          '六三：噬腊肉，遇毒，小吝，无咎。',
+          '九四：噬干胏，得金矢，利艰贞，吉。',
+          '六五：噬干肉，得黄金，贞厉，无咎。',
+          '上九：何校灭耳，凶。'
+        ]
+      },
+      gen_li: {
+        number: 22,
+        name: '贲',
+        fullName: '山火贲',
+        upper: 'gen',
+        lower: 'li',
+        judgment: '贲：亨。小利有攸往。',
+        linesText: [
+          '初九：贲其趾，舍车而徒。',
+          '六二：贲其须。',
+          '九三：贲如濡如，永贞吉。',
+          '六四：贲如皤如，白马翰如，匪寇婚媾。',
+          '六五：贲于丘园，束帛戋戋，吝，终吉。',
+          '上九：白贲，无咎。'
+        ]
+      },
+      gen_kun: {
+        number: 23,
+        name: '剥',
+        fullName: '山地剥',
+        upper: 'gen',
+        lower: 'kun',
+        judgment: '剥：不利有攸往。',
+        linesText: [
+          '初六：剥床以足，蔑贞凶。',
+          '六二：剥床以辨，蔑贞凶。',
+          '六三：剥之，无咎。',
+          '六四：剥床以肤，凶。',
+          '六五：贯鱼，以宫人宠，无不利。',
+          '上九：硕果不食，君子得舆，小人剥庐。'
+        ]
+      },
+      kun_zhen: {
+        number: 24,
+        name: '复',
+        fullName: '地雷复',
+        upper: 'kun',
+        lower: 'zhen',
+        judgment: '复：亨。出入无疾，朋来无咎。反复其道，七日来复，利有攸往。',
+        linesText: [
+          '初九：不远复，无祗悔，元吉。',
+          '六二：休复，吉。',
+          '六三：频复，厉无咎。',
+          '六四：中行独复。',
+          '六五：敦复，无悔。',
+          '上六：迷复，凶，有灾眚。用行师，终有大败，以其国君凶。至于十年不克征。'
+        ]
+      },
+      qian_zhen: {
+        number: 25,
+        name: '无妄',
+        fullName: '天雷无妄',
+        upper: 'qian',
+        lower: 'zhen',
+        judgment: '无妄：元亨，利贞。其匪正有眚，不利有攸往。',
+        linesText: [
+          '初九：无妄，往吉。',
+          '六二：不耕获，不菑畬，则利有攸往。',
+          '六三：无妄之灾，或系之牛，行人之得，邑人之灾。',
+          '九四：可贞，无咎。',
+          '九五：无妄之疾，勿药有喜。',
+          '上九：无妄，行有眚，无攸利。'
+        ]
+      },
+      gen_qian: {
+        number: 26,
+        name: '大畜',
+        fullName: '山天大畜',
+        upper: 'gen',
+        lower: 'qian',
+        judgment: '大畜：利贞。不家食吉，利涉大川。',
+        linesText: [
+          '初九：有厉，利已。',
+          '九二：舆说輹。',
+          '九三：良马逐，利艰贞。曰闲舆卫，利有攸往。',
+          '六四：童牛之牿，元吉。',
+          '六五：豮豕之牙，吉。',
+          '上九：何天之衢，亨。'
+        ]
+      },
+      gen_zhen: {
+        number: 27,
+        name: '颐',
+        fullName: '山雷颐',
+        upper: 'gen',
+        lower: 'zhen',
+        judgment: '颐：贞吉。观颐，自求口实。',
+        linesText: [
+          '初九：舍尔灵龟，观我朵颐，凶。',
+          '六二：颠颐，拂经，于丘颐，征凶。',
+          '六三：拂颐，贞凶，十年勿用，无攸利。',
+          '六四：颠颐，吉。虎视眈眈，其欲逐逐，无咎。',
+          '六五：拂经，居贞吉，不可涉大川。',
+          '上九：由颐，厉吉，利涉大川。'
+        ]
+      },
+      dui_xun: {
+        number: 28,
+        name: '大过',
+        fullName: '泽风大过',
+        upper: 'dui',
+        lower: 'xun',
+        judgment: '大过：栋桡，利有攸往，亨。',
+        linesText: [
+          '初六：藉用白茅，无咎。',
+          '九二：枯杨生稊，老夫得其女妻，无不利。',
+          '九三：栋桡，凶。',
+          '九四：栋隆，吉。有它吝。',
+          '九五：枯杨生华，老妇得其士夫，无咎无誉。',
+          '上六：过涉灭顶，凶，无咎。'
+        ]
+      },
+      kan_kan: {
+        number: 29,
+        name: '坎',
+        fullName: '坎为水',
+        upper: 'kan',
+        lower: 'kan',
+        judgment: '坎：习坎，有孚，维心亨，行有尚。',
+        linesText: [
+          '初六：习坎，入于坎窞，凶。',
+          '九二：坎有险，求小得。',
+          '六三：来之坎坎，险且枕，入于坎窞，勿用。',
+          '六四：樽酒簋贰，用缶，纳约自牖，终无咎。',
+          '九五：坎不盈，祗既平，无咎。',
+          '上六：系用徽纆，寘于丛棘，三岁不得，凶。'
+        ]
+      },
+      li_li: {
+        number: 30,
+        name: '离',
+        fullName: '离为火',
+        upper: 'li',
+        lower: 'li',
+        judgment: '离：利贞，亨。畜牝牛，吉。',
+        linesText: [
+          '初九：履错然，敬之无咎。',
+          '六二：黄离，元吉。',
+          '九三：日昃之离，不鼓缶而歌，则大耋之嗟，凶。',
+          '九四：突如其来如，焚如，死如，弃如。',
+          '六五：出涕沱若，戚嗟若，吉。',
+          '上九：王用出征，有嘉折首，获匪其丑，无咎。'
+        ]
+      },
+      dui_gen: {
+        number: 31,
+        name: '咸',
+        fullName: '泽山咸',
+        upper: 'dui',
+        lower: 'gen',
+        judgment: '咸：亨，利贞，取女吉。',
+        linesText: [
+          '初六：咸其拇。',
+          '六二：咸其腓，凶，居吉。',
+          '九三：咸其股，执其随，往吝。',
+          '九四：贞吉悔亡，憧憧往来，朋从尔思。',
+          '九五：咸其脢，无悔。',
+          '上六：咸其辅颊舌。'
+        ]
+      },
+      zhen_xun: {
+        number: 32,
+        name: '恒',
+        fullName: '雷风恒',
+        upper: 'zhen',
+        lower: 'xun',
+        judgment: '恒：亨，无咎，利贞，利有攸往。',
+        linesText: [
+          '初六：浚恒，贞凶，无攸利。',
+          '九二：悔亡。',
+          '九三：不恒其德，或承之羞，贞吝。',
+          '九四：田无禽。',
+          '六五：恒其德，贞，妇人吉，夫子凶。',
+          '上六：振恒，凶。'
+        ]
+      },
+      qian_gen: {
+        number: 33,
+        name: '遁',
+        fullName: '天山遁',
+        upper: 'qian',
+        lower: 'gen',
+        judgment: '遁：亨，小利贞。',
+        linesText: [
+          '初六：遁尾，厉，勿用有攸往。',
+          '六二：执之用黄牛之革，莫之胜说。',
+          '九三：系遁，有疾厉，畜臣妾吉。',
+          '九四：好遁，君子吉，小人否。',
+          '九五：嘉遁，贞吉。',
+          '上九：肥遁，无不利。'
+        ]
+      },
+      zhen_qian: {
+        number: 34,
+        name: '大壮',
+        fullName: '雷天大壮',
+        upper: 'zhen',
+        lower: 'qian',
+        judgment: '大壮：利贞。',
+        linesText: [
+          '初九：壮于趾，征凶，有孚。',
+          '九二：贞吉。',
+          '九三：小人用壮，君子用罔，贞厉。羝羊触藩，羸其角。',
+          '九四：贞吉悔亡。藩决不羸，壮于大舆之輹。',
+          '六五：丧羊于易，无悔。',
+          '上六：羝羊触藩，不能退，不能遂，无攸利，艰则吉。'
+        ]
+      },
+      li_kun: {
+        number: 35,
+        name: '晋',
+        fullName: '火地晋',
+        upper: 'li',
+        lower: 'kun',
+        judgment: '晋：康侯用锡马蕃庶，昼日三接。',
+        linesText: [
+          '初六：晋如摧如，贞吉。罔孚，裕无咎。',
+          '六二：晋如愁如，贞吉。受兹介福，于其王母。',
+          '六三：众允，悔亡。',
+          '九四：晋如鼫鼠，贞厉。',
+          '六五：悔亡，失得勿恤。往吉，无不利。',
+          '上九：晋其角，维用伐邑，厉吉无咎，贞吝。'
+        ]
+      },
+      kun_li: {
+        number: 36,
+        name: '明夷',
+        fullName: '地火明夷',
+        upper: 'kun',
+        lower: 'li',
+        judgment: '明夷：利艰贞。',
+        linesText: [
+          '初九：明夷于飞，垂其翼。君子于行，三日不食，有攸往，主人有言。',
+          '六二：明夷，夷于左股，用拯马壮，吉。',
+          '九三：明夷于南狩，得其大首，不可疾贞。',
+          '六四：入于左腹，获明夷之心，于出门庭。',
+          '六五：箕子之明夷，利贞。',
+          '上六：不明晦，初登于天，后入于地。'
+        ]
+      },
+      xun_li: {
+        number: 37,
+        name: '家人',
+        fullName: '风火家人',
+        upper: 'xun',
+        lower: 'li',
+        judgment: '家人：利女贞。',
+        linesText: [
+          '初九：闲有家，悔亡。',
+          '六二：无攸遂，在中馈，贞吉。',
+          '九三：家人嗃嗃，悔厉吉。妇子嘻嘻，终吝。',
+          '六四：富家，大吉。',
+          '九五：王假有家，勿恤，吉。',
+          '上九：有孚威如，终吉。'
+        ]
+      },
+      li_dui: {
+        number: 38,
+        name: '睽',
+        fullName: '火泽睽',
+        upper: 'li',
+        lower: 'dui',
+        judgment: '睽：小事吉。',
+        linesText: [
+          '初九：悔亡。丧马勿逐，自复。见恶人，无咎。',
+          '九二：遇主于巷，无咎。',
+          '六三：见舆曳，其牛掣，其人天且劓，无初有终。',
+          '九四：睽孤，遇元夫，交孚，厉无咎。',
+          '六五：悔亡。厥宗噬肤，往何咎。',
+          '上九：睽孤，见豕负涂，载鬼一车。先张之弧，后说之弧。匪寇婚媾，往遇雨则吉。'
+        ]
+      },
+      kan_gen: {
+        number: 39,
+        name: '蹇',
+        fullName: '水山蹇',
+        upper: 'kan',
+        lower: 'gen',
+        judgment: '蹇：利西南，不利东北。利见大人，贞吉。',
+        linesText: [
+          '初六：往蹇，来誉。',
+          '六二：王臣蹇蹇，匪躬之故。',
+          '九三：往蹇，来反。',
+          '六四：往蹇，来连。',
+          '九五：大蹇，朋来。',
+          '上六：往蹇，来硕，吉，利见大人。'
+        ]
+      },
+      zhen_kan: {
+        number: 40,
+        name: '解',
+        fullName: '雷水解',
+        upper: 'zhen',
+        lower: 'kan',
+        judgment: '解：利西南。无所往，其来复吉。有攸往，夙吉。',
+        linesText: [
+          '初六：无咎。',
+          '九二：田获三狐，得黄矢，贞吉。',
+          '六三：负且乘，致寇至，贞吝。',
+          '九四：解而拇，朋至斯孚。',
+          '六五：君子维有解，吉。有孚于小人。',
+          '上六：公用射隼于高墉之上，获之，无不利。'
+        ]
+      },
+      gen_dui: {
+        number: 41,
+        name: '损',
+        fullName: '山泽损',
+        upper: 'gen',
+        lower: 'dui',
+        judgment: '损：有孚，元吉，无咎，可贞，利有攸往。曷之用？二簋可用享。',
+        linesText: [
+          '初九：已事遄往，无咎，酌损之。',
+          '九二：利贞，征凶，弗损益之。',
+          '六三：三人行，则损一人；一人行，则得其友。',
+          '六四：损其疾，使遄有喜，无咎。',
+          '六五：或益之十朋之龟，弗克违，元吉。',
+          '上九：弗损益之，无咎，贞吉，利有攸往，得臣无家。'
+        ]
+      },
+      xun_zhen: {
+        number: 42,
+        name: '益',
+        fullName: '风雷益',
+        upper: 'xun',
+        lower: 'zhen',
+        judgment: '益：利有攸往，利涉大川。',
+        linesText: [
+          '初九：利用为大作，元吉，无咎。',
+          '六二：或益之十朋之龟，弗克违，永贞吉。王用享于帝，吉。',
+          '六三：益之用凶事，无咎。有孚中行，告公用圭。',
+          '六四：中行，告公从。利用为依迁国。',
+          '九五：有孚惠心，勿问元吉。有孚惠我德。',
+          '上九：莫益之，或击之，立心勿恒，凶。'
+        ]
+      },
+      dui_qian: {
+        number: 43,
+        name: '夬',
+        fullName: '泽天夬',
+        upper: 'dui',
+        lower: 'qian',
+        judgment: '夬：扬于王庭，孚号，有厉，告自邑。不利即戎，利有攸往。',
+        linesText: [
+          '初九：壮于前趾，往不胜为咎。',
+          '九二：惕号，莫夜有戎，勿恤。',
+          '九三：壮于頄，有凶。君子夬夬，独行遇雨，若濡有愠，无咎。',
+          '九四：臀无肤，其行次且。牵羊悔亡，闻言不信。',
+          '九五：苋陆夬夬，中行无咎。',
+          '上六：无号，终有凶。'
+        ]
+      },
+      qian_xun: {
+        number: 44,
+        name: '姤',
+        fullName: '天风姤',
+        upper: 'qian',
+        lower: 'xun',
+        judgment: '姤：女壮，勿用取女。',
+        linesText: [
+          '初六：系于金柅，贞吉。有攸往，见凶。羸豕孚蹢躅。',
+          '九二：包有鱼，无咎，不利宾。',
+          '九三：臀无肤，其行次且，厉，无大咎。',
+          '九四：包无鱼，起凶。',
+          '九五：以杞包瓜，含章，有陨自天。',
+          '上九：姤其角，吝，无咎。'
+        ]
+      },
+      dui_kun: {
+        number: 45,
+        name: '萃',
+        fullName: '泽地萃',
+        upper: 'dui',
+        lower: 'kun',
+        judgment: '萃：亨。王假有庙，利见大人，亨，利贞。用大牲吉，利有攸往。',
+        linesText: [
+          '初六：有孚不终，乃乱乃萃。若号，一握为笑，勿恤，往无咎。',
+          '六二：引吉，无咎，孚乃利用禴。',
+          '六三：萃如嗟如，无攸利。往无咎，小吝。',
+          '九四：大吉，无咎。',
+          '九五：萃有位，无咎。匪孚，元永贞，悔亡。',
+          '上六：赍咨涕洟，无咎。'
+        ]
+      },
+      kun_xun: {
+        number: 46,
+        name: '升',
+        fullName: '地风升',
+        upper: 'kun',
+        lower: 'xun',
+        judgment: '升：元亨。用见大人，勿恤，南征吉。',
+        linesText: [
+          '初六：允升，大吉。',
+          '九二：孚乃利用禴，无咎。',
+          '九三：升虚邑。',
+          '六四：王用亨于岐山，吉，无咎。',
+          '六五：贞吉，升阶。',
+          '上六：冥升，利于不息之贞。'
+        ]
+      },
+      dui_kan: {
+        number: 47,
+        name: '困',
+        fullName: '泽水困',
+        upper: 'dui',
+        lower: 'kan',
+        judgment: '困：亨，贞，大人吉，无咎。有言不信。',
+        linesText: [
+          '初六：臀困于株木，入于幽谷，三岁不觌。',
+          '九二：困于酒食，朱绂方来，利用享祀。征凶，无咎。',
+          '六三：困于石，据于蒺藜，入于其宫，不见其妻，凶。',
+          '九四：来徐徐，困于金车，吝，有终。',
+          '九五：劓刖，困于赤绂，乃徐有说，利用祭祀。',
+          '上六：困于葛藟，于臲卼，曰动悔。有悔，征吉。'
+        ]
+      },
+      kan_xun: {
+        number: 48,
+        name: '井',
+        fullName: '水风井',
+        upper: 'kan',
+        lower: 'xun',
+        judgment: '井：改邑不改井，无丧无得，往来井井。汔至亦未繘井，羸其瓶，凶。',
+        linesText: [
+          '初六：井泥不食，旧井无禽。',
+          '九二：井谷射鲋，瓮敝漏。',
+          '九三：井渫不食，为我心恻。可用汲，王明，并受其福。',
+          '六四：井甃，无咎。',
+          '九五：井冽，寒泉食。',
+          '上六：井收勿幕，有孚元吉。'
+        ]
+      },
+      dui_li: {
+        number: 49,
+        name: '革',
+        fullName: '泽火革',
+        upper: 'dui',
+        lower: 'li',
+        judgment: '革：己日乃孚，元亨利贞，悔亡。',
+        linesText: [
+          '初九：巩用黄牛之革。',
+          '六二：己日乃革之，征吉，无咎。',
+          '九三：征凶，贞厉。革言三就，有孚。',
+          '九四：悔亡，有孚改命，吉。',
+          '九五：大人虎变，未占有孚。',
+          '上六：君子豹变，小人革面。征凶，居贞吉。'
+        ]
+      },
+      li_xun: {
+        number: 50,
+        name: '鼎',
+        fullName: '火风鼎',
+        upper: 'li',
+        lower: 'xun',
+        judgment: '鼎：元吉，亨。',
+        linesText: [
+          '初六：鼎颠趾，利出否，得妾以其子，无咎。',
+          '九二：鼎有实，我仇有疾，不我能即，吉。',
+          '九三：鼎耳革，其行塞，雉膏不食。方雨亏悔，终吉。',
+          '九四：鼎折足，覆公餗，其形渥，凶。',
+          '六五：鼎黄耳金铉，利贞。',
+          '上九：鼎玉铉，大吉，无不利。'
+        ]
+      },
+      zhen_zhen: {
+        number: 51,
+        name: '震',
+        fullName: '震为雷',
+        upper: 'zhen',
+        lower: 'zhen',
+        judgment: '震：亨。震来虩虩，笑言哑哑。震惊百里，不丧匕鬯。',
+        linesText: [
+          '初九：震来虩虩，后笑言哑哑，吉。',
+          '六二：震来厉，亿丧贝，跻于九陵，勿逐，七日得。',
+          '六三：震苏苏，震行无眚。',
+          '九四：震遂泥。',
+          '六五：震往来厉，亿无丧，有事。',
+          '上六：震索索，视矍矍，征凶。震不于其躬，于其邻，无咎。婚媾有言。'
+        ]
+      },
+      gen_gen: {
+        number: 52,
+        name: '艮',
+        fullName: '艮为山',
+        upper: 'gen',
+        lower: 'gen',
+        judgment: '艮：艮其背，不获其身，行其庭，不见其人，无咎。',
+        linesText: [
+          '初六：艮其趾，无咎，利永贞。',
+          '六二：艮其腓，不拯其随，其心不快。',
+          '九三：艮其限，列其夤，厉薰心。',
+          '六四：艮其身，无咎。',
+          '六五：艮其辅，言有序，悔亡。',
+          '上九：敦艮，吉。'
+        ]
+      },
+      xun_gen: {
+        number: 53,
+        name: '渐',
+        fullName: '风山渐',
+        upper: 'xun',
+        lower: 'gen',
+        judgment: '渐：女归吉，利贞。',
+        linesText: [
+          '初六：鸿渐于干，小子厉，有言，无咎。',
+          '六二：鸿渐于磐，饮食衎衎，吉。',
+          '九三：鸿渐于陆，夫征不复，妇孕不育，凶。利御寇。',
+          '六四：鸿渐于木，或得其桷，无咎。',
+          '九五：鸿渐于陵，妇三岁不孕，终莫之胜，吉。',
+          '上九：鸿渐于陆，其羽可用为仪，吉。'
+        ]
+      },
+      zhen_dui: {
+        number: 54,
+        name: '归妹',
+        fullName: '雷泽归妹',
+        upper: 'zhen',
+        lower: 'dui',
+        judgment: '归妹：征凶，无攸利。',
+        linesText: [
+          '初九：归妹以娣，跛能履，征吉。',
+          '九二：眇能视，利幽人之贞。',
+          '六三：归妹以须，反归以娣。',
+          '九四：归妹愆期，迟归有时。',
+          '六五：帝乙归妹，其君之袂不如其娣之袂良。月几望，吉。',
+          '上六：女承筐无实，士刲羊无血，无攸利。'
+        ]
+      },
+      zhen_li: {
+        number: 55,
+        name: '丰',
+        fullName: '雷火丰',
+        upper: 'zhen',
+        lower: 'li',
+        judgment: '丰：亨，王假之，勿忧，宜日中。',
+        linesText: [
+          '初九：遇其配主，虽旬无咎，往有尚。',
+          '六二：丰其蔀，日中见斗。往得疑疾，有孚发若，吉。',
+          '九三：丰其沛，日中见沫，折其右肱，无咎。',
+          '九四：丰其蔀，日中见斗，遇其夷主，吉。',
+          '六五：来章，有庆誉，吉。',
+          '上六：丰其屋，蔀其家，窥其户，阒其无人，三岁不觌，凶。'
+        ]
+      },
+      li_gen: {
+        number: 56,
+        name: '旅',
+        fullName: '火山旅',
+        upper: 'li',
+        lower: 'gen',
+        judgment: '旅：小亨，旅贞吉。',
+        linesText: [
+          '初六：旅琐琐，斯其所取灾。',
+          '六二：旅即次，怀其资，得童仆贞。',
+          '九三：旅焚其次，丧其童仆，贞厉。',
+          '九四：旅于处，得其资斧，我心不快。',
+          '六五：射雉一矢亡，终以誉命。',
+          '上九：鸟焚其巢，旅人先笑后号咷。丧牛于易，凶。'
+        ]
+      },
+      xun_xun: {
+        number: 57,
+        name: '巽',
+        fullName: '巽为风',
+        upper: 'xun',
+        lower: 'xun',
+        judgment: '巽：小亨，利有攸往，利见大人。',
+        linesText: [
+          '初六：进退，利武人之贞。',
+          '九二：巽在床下，用史巫纷若，吉，无咎。',
+          '九三：频巽，吝。',
+          '六四：悔亡，田获三品。',
+          '九五：贞吉，悔亡，无不利。无初有终。先庚三日，后庚三日，吉。',
+          '上九：巽在床下，丧其资斧，贞凶。'
+        ]
+      },
+      dui_dui: {
+        number: 58,
+        name: '兑',
+        fullName: '兑为泽',
+        upper: 'dui',
+        lower: 'dui',
+        judgment: '兑：亨，利贞。',
+        linesText: [
+          '初九：和兑，吉。',
+          '九二：孚兑，吉，悔亡。',
+          '六三：来兑，凶。',
+          '九四：商兑未宁，介疾有喜。',
+          '九五：孚于剥，有厉。',
+          '上六：引兑。'
+        ]
+      },
+      xun_kan: {
+        number: 59,
+        name: '涣',
+        fullName: '风水涣',
+        upper: 'xun',
+        lower: 'kan',
+        judgment: '涣：亨。王假有庙，利涉大川，利贞。',
+        linesText: [
+          '初六：用拯马壮，吉。',
+          '九二：涣奔其机，悔亡。',
+          '六三：涣其躬，无悔。',
+          '六四：涣其群，元吉。涣有丘，匪夷所思。',
+          '九五：涣汗其大号，涣王居，无咎。',
+          '上九：涣其血，去逖出，无咎。'
+        ]
+      },
+      kan_dui: {
+        number: 60,
+        name: '节',
+        fullName: '水泽节',
+        upper: 'kan',
+        lower: 'dui',
+        judgment: '节：亨。苦节不可贞。',
+        linesText: [
+          '初九：不出户庭，无咎。',
+          '九二：不出门庭，凶。',
+          '六三：不节若，则嗟若，无咎。',
+          '六四：安节，亨。',
+          '九五：甘节，吉，往有尚。',
+          '上六：苦节，贞凶，悔亡。'
+        ]
+      },
+      xun_dui: {
+        number: 61,
+        name: '中孚',
+        fullName: '风泽中孚',
+        upper: 'xun',
+        lower: 'dui',
+        judgment: '中孚：豚鱼吉，利涉大川，利贞。',
+        linesText: [
+          '初九：虞吉，有它不燕。',
+          '九二：鸣鹤在阴，其子和之。我有好爵，吾与尔靡之。',
+          '六三：得敌，或鼓或罢，或泣或歌。',
+          '六四：月几望，马匹亡，无咎。',
+          '九五：有孚挛如，无咎。',
+          '上九：翰音登于天，贞凶。'
+        ]
+      },
+      zhen_gen: {
+        number: 62,
+        name: '小过',
+        fullName: '雷山小过',
+        upper: 'zhen',
+        lower: 'gen',
+        judgment: '小过：亨，利贞。可小事，不可大事。飞鸟遗之音，不宜上宜下，大吉。',
+        linesText: [
+          '初六：飞鸟以凶。',
+          '六二：过其祖，遇其妣。不及其君，遇其臣，无咎。',
+          '九三：弗过防之，从或戕之，凶。',
+          '九四：无咎。弗过遇之，往厉必戒，勿用永贞。',
+          '六五：密云不雨，自我西郊，公弋取彼在穴。',
+          '上六：弗遇过之，飞鸟离之，凶，是谓灾眚。'
+        ]
+      },
+      kan_li: {
+        number: 63,
+        name: '既济',
+        fullName: '水火既济',
+        upper: 'kan',
+        lower: 'li',
+        judgment: '既济：亨小，利贞。初吉终乱。',
+        linesText: [
+          '初九：曳其轮，濡其尾，无咎。',
+          '六二：妇丧其茀，勿逐，七日得。',
+          '九三：高宗伐鬼方，三年克之，小人勿用。',
+          '六四：繻有衣袽，终日戒。',
+          '九五：东邻杀牛，不如西邻之禴祭，实受其福。',
+          '上六：濡其首，厉。'
+        ]
+      },
+      li_kan: {
+        number: 64,
+        name: '未济',
+        fullName: '火水未济',
+        upper: 'li',
+        lower: 'kan',
+        judgment: '未济：亨。小狐汔济，濡其尾，无攸利。',
+        linesText: [
+          '初六：濡其尾，吝。',
+          '九二：曳其轮，贞吉。',
+          '六三：未济，征凶，利涉大川。',
+          '九四：贞吉，悔亡。震用伐鬼方，三年有赏于大国。',
+          '六五：贞吉，无悔。君子之光，有孚吉。',
+          '上九：有孚于饮酒，无咎。濡其首，有孚失是。'
+        ]
+      }
+    };
+
+    // state
+    const state = {
+      activeTab: TAB_KEYS.bazi,
+      bazi: {
+        birthDate: '1990-05-16',
+        birthTime: '09:30',
+        gender: 'male',
+        birthPlace: toLocationKey('北京市', '北京市'),
+        result: null,
+        error: ''
+      },
+      iching: {
+        mode: 'trigrams',
+        upperTrigram: 'kan',
+        lowerTrigram: 'kun',
+        linesBottomToTop: [0, 0, 0, 0, 1, 0],
+        changingIndexes: []
+      }
+    };
+
+    // Bazi calculation delegates calendar and pillar logic to lunar-typescript.
+    function getSolarFactory() {
+      const namespace = window.lunarTypescriptModule || window.lunar || window.LunarTypescript || null;
+      const SolarFactory = namespace?.Solar || window.Solar;
+      return typeof SolarFactory?.fromYmdHms === 'function' ? SolarFactory : null;
+    }
+
+    function populateLocationPresets() {
+      const select = document.querySelector('#birth-place');
+      select.innerHTML = DOMESTIC_LOCATION_GROUPS
+        .map((group) => {
+          const options = group.cities
+            .map((city) => {
+              const key = toLocationKey(group.province, city);
+              return `<option value="${escapeHtml(key)}">${escapeHtml(group.province)} ${escapeHtml(city)}</option>`;
+            })
+            .join('');
+          return `<optgroup label="${escapeHtml(group.province)}">${options}</optgroup>`;
+        })
+        .join('');
+      select.value = state.bazi.birthPlace;
+    }
+
+    function normalizeBirthInput(formState) {
+      const [yearText, monthText, dayText] = formState.birthDate.split('-');
+      const [hourText, minuteText] = formState.birthTime.split(':');
+      const year = Number(yearText);
+      const month = Number(monthText);
+      const day = Number(dayText);
+      const hour = Number(hourText);
+      const minute = Number(minuteText);
+
+      if (![year, month, day, hour, minute].every(Number.isInteger)) {
+        throw new Error('请填写完整的公历日期和出生时间。');
+      }
+
+      const date = new Date(year, month - 1, day, hour, minute, 0);
+      const isRealDate = date.getFullYear() === year
+        && date.getMonth() === month - 1
+        && date.getDate() === day
+        && date.getHours() === hour
+        && date.getMinutes() === minute;
+
+      if (!isRealDate) {
+        throw new Error('日期或时间无效，请检查输入。');
+      }
+
+      if (!LOCATION_PRESETS[formState.birthPlace]) {
+        throw new Error('出生地选项无效。');
+      }
+
+      return { year, month, day, hour, minute, second: 0 };
+    }
+
+    function getTimeStrategyText(locationKey) {
+      const location = LOCATION_PRESETS[locationKey] || LOCATION_PRESETS[toLocationKey('北京市', '北京市')];
+      const offset = location.utcOffsetMinutes === null
+        ? '按所选 IANA 时区保留，暂不换算'
+        : `UTC${location.utcOffsetMinutes >= 0 ? '+' : '-'}${Math.abs(location.utcOffsetMinutes / 60)}`;
+
+      if (location.dstPolicy === 'iana') {
+        return `${location.label}。当前按用户填写的出生地当地时间直接传入 lunar-typescript，不擅自换算北京时间；夏令时策略接口已保留。`;
+      }
+
+      return `${location.label}，${offset}。当前按填写时间直接传入 lunar-typescript。`;
+    }
+
+    function formatJieQi(jieQi) {
+      if (!jieQi || typeof jieQi.getName !== 'function') return '';
+
+      const name = jieQi.getName();
+      const solar = typeof jieQi.getSolar === 'function' ? jieQi.getSolar() : null;
+      const timeText = solar && typeof solar.toYmdHms === 'function' ? `（${solar.toYmdHms()}）` : '';
+      return `${name}${timeText}`;
+    }
+
+    function getSolarTermInfo(lunar) {
+      const current = typeof lunar.getCurrentJieQi === 'function' ? lunar.getCurrentJieQi() : null;
+
+      if (current) {
+        return `当前节气：${formatJieQi(current)}`;
+      }
+
+      const prev = typeof lunar.getPrevJieQi === 'function' ? lunar.getPrevJieQi(false) : null;
+      const next = typeof lunar.getNextJieQi === 'function' ? lunar.getNextJieQi(false) : null;
+      const parts = [];
+
+      if (prev) parts.push(`上一节气：${formatJieQi(prev)}`);
+      if (next) parts.push(`下一节气：${formatJieQi(next)}`);
+
+      return parts.length > 0 ? parts.join('；') : 'lunar-typescript 未返回节气信息';
+    }
+
+    function getGeneratedByElement(element) {
+      return Object.entries(ELEMENT_GENERATES)
+        .find(([, generated]) => generated === element)?.[0] || '';
+    }
+
+    function getControlledByElement(element) {
+      return Object.entries(ELEMENT_CONTROLS)
+        .find(([, controlled]) => controlled === element)?.[0] || '';
+    }
+
+    function getTenGod(dayStem, targetStem) {
+      const dayMeta = STEM_META[dayStem];
+      const targetMeta = STEM_META[targetStem];
+      if (!dayMeta || !targetMeta) return '-';
+
+      const isSamePolarity = dayMeta.polarity === targetMeta.polarity;
+      const dayElement = dayMeta.element;
+      const targetElement = targetMeta.element;
+
+      if (targetElement === dayElement) {
+        return isSamePolarity ? TEN_GOD_NAMES.friend : TEN_GOD_NAMES.robWealth;
+      }
+
+      if (ELEMENT_GENERATES[dayElement] === targetElement) {
+        return isSamePolarity ? TEN_GOD_NAMES.eatingGod : TEN_GOD_NAMES.hurtingOfficer;
+      }
+
+      if (ELEMENT_CONTROLS[dayElement] === targetElement) {
+        return isSamePolarity ? TEN_GOD_NAMES.indirectWealth : TEN_GOD_NAMES.directWealth;
+      }
+
+      if (ELEMENT_CONTROLS[targetElement] === dayElement) {
+        return isSamePolarity ? TEN_GOD_NAMES.sevenKillings : TEN_GOD_NAMES.directOfficer;
+      }
+
+      if (ELEMENT_GENERATES[targetElement] === dayElement) {
+        return isSamePolarity ? TEN_GOD_NAMES.indirectResource : TEN_GOD_NAMES.directResource;
+      }
+
+      return '-';
+    }
+
+    function buildPillar(label, value, dayStem, isDay = false) {
+      const [stem = '-', branch = '-'] = [...String(value || '--')];
+      return {
+        label,
+        stem,
+        branch,
+        mainStar: isDay ? '日主' : getTenGod(dayStem, stem),
+        hiddenStems: BRANCH_HIDDEN_STEMS[branch] || [],
+        isDay
+      };
+    }
+
+    function getElementDisplay(elements) {
+      return elements
+        .filter(Boolean)
+        .map((element) => ELEMENT_LABELS[element] || element)
+        .join('、') || '-';
+    }
+
+    function getEmptyElementCounts() {
+      return Object.keys(ELEMENT_LABELS).reduce((summary, element) => {
+        summary[element] = 0;
+        return summary;
+      }, {});
+    }
+
+    function calculateBaziElementCounts(pillars) {
+      const counts = getEmptyElementCounts();
+
+      pillars.forEach((pillar) => {
+        [pillar.stem, pillar.branch].forEach((char) => {
+          const element = STEM_BRANCH_ELEMENT_MAP[char];
+          if (element) counts[element] += 1;
+        });
+      });
+
+      return counts;
+    }
+
+    function calculateElementSupport(pillars, dayElement) {
+      const counts = calculateBaziElementCounts(pillars);
+      const resourceElement = getGeneratedByElement(dayElement);
+      const supportScore = counts[dayElement] + (counts[resourceElement] || 0);
+      const pressureScore = Object.entries(counts)
+        .filter(([element]) => element !== dayElement && element !== resourceElement)
+        .reduce((total, [, count]) => total + count, 0);
+
+      return { counts, resourceElement, supportScore, pressureScore };
+    }
+
+    function calculateBaziGods(pillars) {
+      const dayStem = pillars.find((pillar) => pillar.isDay)?.stem;
+      const dayElement = STEM_META[dayStem]?.element;
+
+      if (!dayElement) {
+        return {
+          favorableGod: '-',
+          usefulGod: '-',
+          unfavorableGod: '-'
+        };
+      }
+
+      const { resourceElement, supportScore, pressureScore } = calculateElementSupport(pillars, dayElement);
+      const outputElement = ELEMENT_GENERATES[dayElement];
+      const wealthElement = ELEMENT_CONTROLS[dayElement];
+      const officerElement = getControlledByElement(dayElement);
+      const isWeak = supportScore <= pressureScore;
+
+      return {
+        favorableGod: getElementDisplay(isWeak ? [resourceElement] : [outputElement, wealthElement]),
+        usefulGod: getElementDisplay(isWeak ? [dayElement] : [officerElement]),
+        unfavorableGod: getElementDisplay(isWeak ? [outputElement, wealthElement, officerElement] : [dayElement, resourceElement])
+      };
+    }
+
+    function calculateBazi(formState) {
+      const SolarFactory = getSolarFactory();
+
+      if (!SolarFactory) {
+        throw new Error('lunar-typescript 尚未加载成功，无法计算四柱。');
+      }
+
+      const input = normalizeBirthInput(formState);
+      const solar = SolarFactory.fromYmdHms(input.year, input.month, input.day, input.hour, input.minute, input.second);
+      const lunar = solar.getLunar();
+      const eightChar = lunar.getEightChar();
+      const dayNaYin = typeof eightChar.getDayNaYin === 'function'
+        ? eightChar.getDayNaYin()
+        : 'lunar-typescript 未返回日柱纳音';
+      const rawPillars = {
+        year: eightChar.getYear(),
+        month: eightChar.getMonth(),
+        day: eightChar.getDay(),
+        time: eightChar.getTime()
+      };
+      const dayStem = [...String(rawPillars.day || '')][0];
+      const pillars = [
+        buildPillar('年柱', rawPillars.year, dayStem),
+        buildPillar('月柱', rawPillars.month, dayStem),
+        buildPillar('日柱', rawPillars.day, dayStem, true),
+        buildPillar('时柱', rawPillars.time, dayStem)
+      ];
+      const gods = calculateBaziGods(pillars);
+
+      return {
+        pillars,
+        elementCounts: calculateBaziElementCounts(pillars),
+        timeStrategy: getTimeStrategyText(formState.birthPlace),
+        solarTerm: getSolarTermInfo(lunar),
+        dayNaYin,
+        ...gods
+      };
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderElementChars(value) {
+      return [...String(value)].map((char) => {
+        const element = STEM_BRANCH_ELEMENT_MAP[char];
+        if (!element) return escapeHtml(char);
+
+        const color = FIVE_ELEMENT_COLORS[element];
+        return `<span class="element-char is-${element}" style="--element-color: ${color}">${escapeHtml(char)}</span>`;
+      }).join('');
+    }
+
+    function renderHiddenStems(hiddenStems) {
+      if (!hiddenStems?.length) return '-';
+
+      return hiddenStems
+        .map((stem) => `<span class="hidden-stem">${renderElementChars(stem)}</span>`)
+        .join('');
+    }
+
+    function renderElementSummary(counts) {
+      const safeCounts = counts || getEmptyElementCounts();
+      document.querySelector('#bazi-element-summary').innerHTML = ELEMENT_SUMMARY_ORDER
+        .map((element) => `
+          <span class="element-summary-item" style="--element-color: ${FIVE_ELEMENT_COLORS[element]}">
+            <span>${ELEMENT_LABELS[element]}</span><span class="element-summary-count">${safeCounts[element] || 0}</span>
+          </span>
+        `)
+        .join('');
+    }
+
+    function renderBaziPillars(result) {
+      const pillars = result?.pillars || [
+        { label: '年柱', mainStar: '-', stem: '-', branch: '-', hiddenStems: [] },
+        { label: '月柱', mainStar: '-', stem: '-', branch: '-', hiddenStems: [] },
+        { label: '日柱', mainStar: '-', stem: '-', branch: '-', hiddenStems: [], isDay: true },
+        { label: '时柱', mainStar: '-', stem: '-', branch: '-', hiddenStems: [] }
+      ];
+
+      document.querySelector('#bazi-pillars').innerHTML = pillars
+        .map((pillar) => `
+          <div class="pillar${pillar.isDay ? ' is-day' : ''}">
+            <div class="pillar-label">${pillar.label}</div>
+            <div class="pillar-rows">
+              <div class="pillar-row">
+                <span class="pillar-row-label">主星</span>
+                <div class="pillar-star">${escapeHtml(pillar.mainStar)}</div>
+              </div>
+              <div class="pillar-row">
+                <span class="pillar-row-label">天干</span>
+                <div class="pillar-value">${renderElementChars(pillar.stem)}</div>
+              </div>
+              <div class="pillar-row">
+                <span class="pillar-row-label">地支</span>
+                <div class="pillar-value">${renderElementChars(pillar.branch)}</div>
+              </div>
+              <div class="pillar-row">
+                <span class="pillar-row-label">藏干</span>
+                <div class="pillar-hidden">${renderHiddenStems(pillar.hiddenStems)}</div>
+              </div>
+            </div>
+          </div>
+        `)
+        .join('');
+    }
+
+    function setBaziStatus(message, type) {
+      const status = document.querySelector('#bazi-status');
+      status.textContent = message;
+      status.classList.toggle('is-error', type === 'error');
+      status.classList.toggle('is-ready', type === 'ready');
+    }
+
+    function renderBazi() {
+      let result = null;
+
+      try {
+        result = calculateBazi(state.bazi);
+        state.bazi.result = result;
+        state.bazi.error = '';
+        renderBaziPillars(result);
+        renderElementSummary(result.elementCounts);
+        document.querySelector('#bazi-solar-term').textContent = result.solarTerm;
+        document.querySelector('#bazi-day-nayin').textContent = result.dayNaYin;
+        document.querySelector('#bazi-favorable-god').textContent = result.favorableGod;
+        document.querySelector('#bazi-useful-god').textContent = result.usefulGod;
+        document.querySelector('#bazi-unfavorable-god').textContent = result.unfavorableGod;
+        setBaziStatus('四柱已更新。', 'ready');
+      } catch (error) {
+        state.bazi.result = null;
+        state.bazi.error = error.message;
+        renderBaziPillars(null);
+        renderElementSummary(null);
+        document.querySelector('#bazi-solar-term').textContent = '-';
+        document.querySelector('#bazi-day-nayin').textContent = '-';
+        document.querySelector('#bazi-favorable-god').textContent = '-';
+        document.querySelector('#bazi-useful-god').textContent = '-';
+        document.querySelector('#bazi-unfavorable-god').textContent = '-';
+        setBaziStatus(error.message, 'error');
+      }
+
+      return result;
+    }
+
+    // I Ching line arrays are always stored bottom-to-top.
+    function trigramPairToLines(upperKey, lowerKey) {
+      return [...TRIGRAMS[lowerKey].lines, ...TRIGRAMS[upperKey].lines];
+    }
+
+    function linesToTrigramKeys(linesBottomToTop) {
+      const lowerLines = linesBottomToTop.slice(0, 3);
+      const upperLines = linesBottomToTop.slice(3, 6);
+      const lowerKey = findTrigramKeyByLines(lowerLines);
+      const upperKey = findTrigramKeyByLines(upperLines);
+      return { upperKey, lowerKey };
+    }
+
+    function findTrigramKeyByLines(linesBottomToTop) {
+      const lineKey = linesBottomToTop.join('');
+      return Object.keys(TRIGRAMS).find((key) => TRIGRAMS[key].lines.join('') === lineKey);
+    }
+
+    function getHexagramByTrigrams(upperKey, lowerKey) {
+      return HEXAGRAMS[`${upperKey}_${lowerKey}`] || null;
+    }
+
+    function getHexagramByLines(linesBottomToTop) {
+      const { upperKey, lowerKey } = linesToTrigramKeys(linesBottomToTop);
+      return getHexagramByTrigrams(upperKey, lowerKey);
+    }
+
+    function getChangedLines(linesBottomToTop, changingIndexes) {
+      return linesBottomToTop.map((line, index) => changingIndexes.includes(index) ? Number(!line) : line);
+    }
+
+    function getHexagramTitle(upperKey, lowerKey, hexagram) {
+      if (hexagram) return hexagram.fullName;
+      const upper = TRIGRAMS[upperKey];
+      const lower = TRIGRAMS[lowerKey];
+      return `${upper.nature}${lower.nature}（未找到数据）`;
+    }
+
+    function renderHexagram(container, hexagram, linesBottomToTop) {
+      container.innerHTML = linesBottomToTop
+        .slice()
+        .reverse()
+        .map((line) => `<div class="hexagram-line">${line === 1 ? '⚊' : '⚋'}</div>`)
+        .join('');
+    }
+
+    function getJudgmentTranslation(hexagram) {
+      if (!hexagram) return '暂无对应卦辞译文。';
+
+      const source = hexagram.judgment || '';
+      const parts = [`${hexagram.fullName}提示当前处境要顺势而行，先看清局面，再决定进退。`];
+
+      if (source.includes('元亨') || source.includes('亨')) parts.push('整体有通达、可推进之象。');
+      if (source.includes('利贞')) parts.push('适合守正，坚持原则会更有利。');
+      if (source.includes('贞吉')) parts.push('保持正道可以得到吉利结果。');
+      if (source.includes('吉')) parts.push('条件具备时多有吉象。');
+      if (source.includes('凶')) parts.push('其中也有风险，需要谨慎处理。');
+      if (source.includes('无咎')) parts.push('只要行为得当，可以避免过失。');
+      if (source.includes('利涉大川')) parts.push('可以承担较大的行动或跨越障碍。');
+      if (source.includes('利见大人')) parts.push('适合寻求有经验或有地位者的帮助。');
+      if (source.includes('不利')) parts.push('不适合强行推进不合时宜的事。');
+
+      return parts.join('');
+    }
+
+    function getLinePositionText(index) {
+      return ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻'][index] || '此爻';
+    }
+
+    function getLineTranslation(text, index) {
+      const position = getLinePositionText(index);
+      const parts = [`${position}提示这一阶段要结合所处位置判断行动分寸。`];
+
+      if (text.includes('吉')) parts.push('方向较顺，按正道推进会更有利。');
+      if (text.includes('凶')) parts.push('有明显风险，不宜冒进。');
+      if (text.includes('无咎')) parts.push('谨慎守分，可以避免过失。');
+      if (text.includes('悔亡')) parts.push('及时调整，后悔和隐患可以消除。');
+      if (text.includes('厉')) parts.push('处境有压力，要保持警惕。');
+      if (text.includes('利')) parts.push('有可取之处，但要选择合适方式。');
+      if (text.includes('贞')) parts.push('关键在守正和稳定。');
+      if (text.includes('往')) parts.push('涉及前行或行动时，要先判断时机。');
+      if (text.includes('涉大川')) parts.push('可以面对较大的阻碍或转换。');
+
+      return parts.join('');
+    }
+
+    function renderTranslation(value) {
+      return `<strong>白话：</strong>${escapeHtml(value)}`;
+    }
+
+    function renderLineTexts(list, hexagram) {
+      list.innerHTML = (hexagram?.linesText || [])
+        .map((text, index) => `
+          <li>
+            <div class="line-original">${escapeHtml(text)}</div>
+            <div class="plain-translation">${renderTranslation(getLineTranslation(text, index))}</div>
+          </li>
+        `)
+        .join('');
+    }
+
+    function syncIChingControls() {
+      document.querySelectorAll('[data-iching-mode]').forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.ichingMode === state.iching.mode);
+      });
+
+      document.querySelectorAll('[data-input-section]').forEach((section) => {
+        section.classList.toggle('is-active', section.dataset.inputSection === state.iching.mode);
+      });
+
+      document.querySelector('#upper-trigram').value = state.iching.upperTrigram;
+      document.querySelector('#lower-trigram').value = state.iching.lowerTrigram;
+
+      document.querySelectorAll('[data-line-index]').forEach((select) => {
+        select.value = String(state.iching.linesBottomToTop[Number(select.dataset.lineIndex)]);
+      });
+
+      document.querySelectorAll('[data-changing-index]').forEach((checkbox) => {
+        checkbox.checked = state.iching.changingIndexes.includes(Number(checkbox.dataset.changingIndex));
+      });
+    }
+
+    function renderIChing() {
+      syncIChingControls();
+
+      const { upperKey, lowerKey } = linesToTrigramKeys(state.iching.linesBottomToTop);
+      const originalHexagram = getHexagramByTrigrams(upperKey, lowerKey);
+      const originalTitle = getHexagramTitle(upperKey, lowerKey, originalHexagram);
+
+      renderHexagram(document.querySelector('#original-lines'), originalHexagram, state.iching.linesBottomToTop);
+      document.querySelector('#original-name').textContent = originalTitle;
+      document.querySelector('#original-judgment').textContent = originalHexagram?.judgment || '未找到本卦数据';
+      document.querySelector('#original-judgment-translation').innerHTML = renderTranslation(getJudgmentTranslation(originalHexagram));
+      renderLineTexts(document.querySelector('#original-line-texts'), originalHexagram);
+
+      const changedSection = document.querySelector('#changed-hexagram');
+      const hasChangingLines = state.iching.changingIndexes.length > 0;
+      changedSection.classList.toggle('is-visible', hasChangingLines);
+
+      if (!hasChangingLines) return { originalHexagram, changedHexagram: null };
+
+      const changedLines = getChangedLines(state.iching.linesBottomToTop, state.iching.changingIndexes);
+      const changedKeys = linesToTrigramKeys(changedLines);
+      const changedHexagram = getHexagramByTrigrams(changedKeys.upperKey, changedKeys.lowerKey);
+
+      renderHexagram(document.querySelector('#changed-lines'), changedHexagram, changedLines);
+      document.querySelector('#changed-status').textContent = changedHexagram ? '变卦' : '未找到变卦数据';
+      document.querySelector('#changed-name').textContent = getHexagramTitle(changedKeys.upperKey, changedKeys.lowerKey, changedHexagram);
+      document.querySelector('#changed-judgment').textContent = changedHexagram?.judgment || '未找到变卦数据';
+      document.querySelector('#changed-judgment-translation').innerHTML = renderTranslation(getJudgmentTranslation(changedHexagram));
+
+      return { originalHexagram, changedHexagram, changedLines };
+    }
+
+    // validation
+    function isKnownTab(tabKey) {
+      return Object.prototype.hasOwnProperty.call(TAB_KEYS, tabKey);
+    }
+
+    function validateHexagramData() {
+      const entries = Object.entries(HEXAGRAMS);
+      const trigramKeys = Object.keys(TRIGRAMS);
+      const numbers = new Set();
+      let isValid = true;
+
+      function assertData(condition, message) {
+        console.assert(condition, message);
+        if (!condition) isValid = false;
+      }
+
+      assertData(entries.length === 64, 'HEXAGRAMS must contain exactly 64 items');
+
+      entries.forEach(([key, hexagram]) => {
+        const expectedKey = `${hexagram.upper}_${hexagram.lower}`;
+
+        assertData(key === expectedKey, `${key} key must match upper_lower`);
+        assertData(Number.isInteger(hexagram.number), `${key} number must be an integer`);
+        assertData(!numbers.has(hexagram.number), `${key} number must be unique`);
+        assertData(hexagram.number >= 1 && hexagram.number <= 64, `${key} number must be 1-64`);
+        assertData(typeof hexagram.name === 'string' && hexagram.name.length > 0, `${key} name is required`);
+        assertData(typeof hexagram.fullName === 'string' && hexagram.fullName.length > 0, `${key} fullName is required`);
+        assertData(Object.prototype.hasOwnProperty.call(TRIGRAMS, hexagram.upper), `${key} upper must be a trigram key`);
+        assertData(Object.prototype.hasOwnProperty.call(TRIGRAMS, hexagram.lower), `${key} lower must be a trigram key`);
+        assertData(typeof hexagram.judgment === 'string' && hexagram.judgment.length > 0, `${key} judgment is required`);
+        assertData(Array.isArray(hexagram.linesText), `${key} linesText must be an array`);
+        assertData(hexagram.linesText?.length === 6, `${key} linesText must contain exactly 6 items`);
+        assertData(hexagram.linesText?.every((line) => typeof line === 'string' && line.length > 0), `${key} every line text is required`);
+
+        numbers.add(hexagram.number);
+      });
+
+      trigramKeys.forEach((upperKey) => {
+        trigramKeys.forEach((lowerKey) => {
+          assertData(Boolean(getHexagramByTrigrams(upperKey, lowerKey)), `${upperKey}_${lowerKey} must exist`);
+        });
+      });
+
+      assertData(HEXAGRAMS.kan_kun?.fullName === '水地比', 'kan_kun.fullName must be 水地比');
+      assertData(HEXAGRAMS.kun_kan?.fullName === '地水师', 'kun_kan.fullName must be 地水师');
+
+      return isValid;
+    }
+
+    // events
+    function setActiveTab(tabKey) {
+      if (!isKnownTab(tabKey)) return;
+
+      state.activeTab = tabKey;
+
+      document.querySelectorAll('[data-tab]').forEach((button) => {
+        const isSelected = button.dataset.tab === tabKey;
+        button.setAttribute('aria-selected', String(isSelected));
+      });
+
+      document.querySelectorAll('[data-panel]').forEach((panel) => {
+        panel.classList.toggle('is-active', panel.dataset.panel === tabKey);
+      });
+    }
+
+    function bindTabs() {
+      document.querySelectorAll('[data-tab]').forEach((button) => {
+        button.addEventListener('click', () => setActiveTab(button.dataset.tab));
+      });
+    }
+
+    function bindBaziInputs() {
+      document.querySelectorAll('#panel-bazi input, #panel-bazi select').forEach((field) => {
+        field.addEventListener('input', () => {
+          state.bazi[field.id.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())] = field.value;
+          renderBazi();
+        });
+      });
+    }
+
+    function bindIChingInputs() {
+      document.querySelectorAll('[data-iching-mode]').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.iching.mode = button.dataset.ichingMode;
+          renderIChing();
+        });
+      });
+
+      document.querySelectorAll('#upper-trigram, #lower-trigram').forEach((select) => {
+        select.addEventListener('input', () => {
+          state.iching.mode = 'trigrams';
+          state.iching.upperTrigram = document.querySelector('#upper-trigram').value;
+          state.iching.lowerTrigram = document.querySelector('#lower-trigram').value;
+          state.iching.linesBottomToTop = trigramPairToLines(state.iching.upperTrigram, state.iching.lowerTrigram);
+          renderIChing();
+        });
+      });
+
+      document.querySelectorAll('[data-line-index]').forEach((select) => {
+        select.addEventListener('input', () => {
+          state.iching.mode = 'lines';
+          state.iching.linesBottomToTop[Number(select.dataset.lineIndex)] = Number(select.value);
+          const { upperKey, lowerKey } = linesToTrigramKeys(state.iching.linesBottomToTop);
+          state.iching.upperTrigram = upperKey;
+          state.iching.lowerTrigram = lowerKey;
+          renderIChing();
+        });
+      });
+
+      document.querySelectorAll('[data-changing-index]').forEach((checkbox) => {
+        checkbox.addEventListener('input', () => {
+          const index = Number(checkbox.dataset.changingIndex);
+          state.iching.changingIndexes = checkbox.checked
+            ? [...state.iching.changingIndexes, index].sort((a, b) => a - b)
+            : state.iching.changingIndexes.filter((item) => item !== index);
+          renderIChing();
+        });
+      });
+    }
+
+    function init() {
+      populateLocationPresets();
+      bindTabs();
+      bindBaziInputs();
+      bindIChingInputs();
+      if (!validateHexagramData()) return;
+      renderBazi();
+      window.lunarTypescriptReady?.then(() => renderBazi());
+      renderIChing();
+      setActiveTab(state.activeTab);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
